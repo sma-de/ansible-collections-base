@@ -5,8 +5,8 @@ name: "base"
 version: "1.0.0"
 readme: "README.md"
 
-##authors:
-##    - "Author1"
+authors:
+    - "Mirko Wilhelmi <Mirko.Wilhelmi@sma.de>"
 ##    - "Author2 (https://author2.example.com)"
 ##    - "Author3 <author3@example.com>"
 ##dependencies:
