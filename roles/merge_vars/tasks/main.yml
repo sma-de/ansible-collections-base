@@ -1,0 +1,126 @@
+---
+
+###
+### TODO: fix bug descriped below
+###
+### note: there is unfortunately a strange bug where the update to 
+###   ansible_facts by merge_vars is ignored / not properly written 
+###   back better explained by a small example, let's say result_var 
+###   is foo, which before merge contains the following: {'bar': 1}, 
+###   and the expected result would be {'bar': 1, 'baz': 2}, than the 
+###   actual result would be {'bar': 1} (foo before merge) while 
+###   ansible_facts.foo would be {'bar': 1, 'baz': 2}, this is exactly 
+###   the same behaviour we got before we found that we must set the 
+###   magic internal variable '_ansible_facts_cacheable' like set_fact 
+###   does but now this does not help anymore
+###
+###  What's not working:
+###
+###    - doing exactly the same as set_fact in merge_vars action plugin code
+###    - calling set_fact itself from merge_vars plugin code and return its result
+###
+###  What is working:
+###
+###    - explicitly calling set_fact as another task after merge_vars
+###
+###  Further Observations:
+###
+###    - More or less the same code works from another repo (and role) with the same ansible ver (2.10), the same pyenv and the same awx tower
+###    - The issue seems only to occure for pre-existing vars to overwrite, not when the resultvar is new
+###
+###  Theories:
+###
+###    - as coming from inside a collection is one of the more obvious differences to working code, this mgith be of importance, I read that collections cannot do vars-plugins for some reason, maybe this is related??
+###    - maybe some kind of strange arbitrary securiy feature (protection from evil modules??)
+###
+
+  - ansible.builtin.set_fact:
+      _tmp_merge_resvar: >-
+        {{ merge_vars_args.result_var | default(None, True) }}
+
+
+  - name: determine merge_vars result var
+    block:
+
+        ##
+        ## if merge_vars resultvar is unset it defaults to first invar, 
+        ## which can either be simply a string varname or a dict with 
+        ## a name subkey
+        ##
+
+      - set_fact:
+          _tmp_merge_resvar: "{{ merge_vars_args.invars | first }}"
+
+      - set_fact:
+          _tmp_merge_resvar: "{{ _tmp_merge_resvar.name }}"
+        when: _tmp_merge_resvar is dict
+
+    when: _tmp_merge_resvar == None
+
+
+    ##
+    ## merges multiple dict/map vars together recursively
+    ##
+  - smabot.base.merge_vars: >-
+      {{ merge_vars_args | combine({'result_var': '_tmp_merge_res_inner_'}) }}
+
+##      ## ##
+##      ## ## the name of the variable where the merged result is written back 
+##      ## ## to, if the special value "___toplvl____" is specified, the 
+##      ## ## result is added directly at ansible var toplvl, so if for example 
+##      ## ## the merged result looked like this {'foo': 'bar'}, the following 
+##      ## ## would be valid after this task: "{ foo }"
+##      ## ##
+##      ## ## optional, if unset defaulted to name of highest prio invar
+##      ## ##
+##      result_var: _tmp_merge_res_inner_
+##
+##      ## if unset defaulting is active for standard magic key defaults
+##      ##defaulting: False/None | 'defaultkey'
+##
+##      ##
+##      ## list of dict/map variables which should be merged together, order 
+##      ## does matter here, as the var which comes first has the highest 
+##      ## priority if a child key/value pair is set in multiple invars
+##      ##
+##      invars: "{{ arg_merge_vars_invars }}"
+    register: _tmp_merge_res_
+
+
+    ## update: this check does not work as the tmp var is actually created
+    ##  - name: check if workaround role is still necessary
+    ##    block:
+    ##
+    ##      - debug:
+    ##          var: _tmp_merge_res_inner_
+    ##
+    ##      - ansible.builtin.assert:
+    ##          that:
+    ##            - False
+    ##          fail_msg: "Updating per merge_vars worked"
+    ##
+    ##    when: _tmp_merge_res_inner_ is defined
+
+
+    ##
+    ## note: the following both set_facts handles the proper updating 
+    ##   of merged var (which is normally done by merged_var module 
+    ##   itself but does atm not work for some reason (see bug description 
+    ##   in file header), they are also the reason why we need a 
+    ##   (function) role here instead of a simple module/action plugin
+    ##
+
+## update: the strange bug from the header is getting even more stranger, 
+##   both these calls should be absolutely identical, but the outcommented 
+##   has the same issue with updating ansible facts / vars as my own module, 
+##   while the classical set_fact works fine
+##  - ansible.builtin.set_fact:
+  - set_fact:
+      "{{ merge_vars_args.result_var }}": "{{ _tmp_merge_res_.merged_var._tmp_merge_res_inner_ }}"
+    when: _tmp_merge_resvar != '___toplvl____'
+
+  - set_fact:
+      "{{ item.key }}": "{{ item.value }}"
+    loop: "{{ _tmp_merge_res_.merged_var._tmp_merge_res_inner_ | dict2items() }}"
+    when: _tmp_merge_resvar == '___toplvl____'
+
