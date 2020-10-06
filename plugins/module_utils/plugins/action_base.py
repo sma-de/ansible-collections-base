@@ -62,7 +62,7 @@ def default_param_value(pname, defcfg, ans_varspace):
 
 
 def check_paramtype(param, value, typespec, errmsg):
-    if typespec is None:
+    if typespec == []:
         # no type restriction ==> noop
         return
 
@@ -77,7 +77,14 @@ def check_paramtype(param, value, typespec, errmsg):
     else:
         ctspec = [typespec]
 
-    if type(value) not in ctspec:
+    type_match = False
+
+    for xt in ctspec:
+        if isinstance(value, xt):
+            type_match = True
+            break
+
+    if not type_match:
         if not errmsg:
             errmsg = "Must be one of the following types: {}".format(typespec)
         raise AnsibleOptionsError(
@@ -89,6 +96,15 @@ def check_paramtype(param, value, typespec, errmsg):
         ansible_assert(len(typespec) == 1, 'Bad typespec')
         for vx in value:
             check_paramtype(param, vx, typespec[0], errmsg)
+
+
+class AnsibleInnerExecError(AnsibleError):
+
+    def __init__(self, calltype, call_id, inner_res):
+      super(AnsibleInnerExecError, self).__init__('')
+      self.inner_res
+      self.call_type
+      self.call_id
 
 
 class BaseAction(ActionBase):
@@ -108,16 +124,43 @@ class BaseAction(ActionBase):
     def get_taskparam(self, name):
         return self._taskparams[name]
 
-    ##def run_other_action_plugin(self, plugin_class, **args):
-    ##    ## TODO: not sure if it is really safe to reuse all this magic ansible interna's for other plugin calls, we need at least to adjust _task.args which again means we need a clean copy of this object at least
-    ##    ## note: re-using _task object and imply overwriting args worked, still not sure how safe this is
-    ##    self._task.args = args
-    ##    tmp = plugin_class(self._task, self._connection, 
-    ##        self._play_context, self._loader, self._templar, 
-    ##        self._shared_loader_obj
-    ##    )
 
-    ##    return tmp.run(task_vars=self._ansible_varspace)
+    def _rescheck_inner_call(self, inner_res, call_id, call_type, 
+        ignore_error=False
+    ):
+        if ignore_error:
+            return inner_res
+
+        if inner_res.get('failed', True):
+            raise AnsibleInnerExecError(call_type, call_id, inner_res)
+
+        return inner_res
+
+
+    def run_other_action_plugin(self, plugin_class, 
+        ans_varspace=None, plugin_args=None, **kwargs
+    ):
+        ## TODO: not sure if it is really safe to reuse all this magic ansible interna's for other plugin calls, we need at least to adjust _task.args which again means we need a clean copy of this object at least
+        ## note: re-using _task object and imply overwriting args worked, still not sure how safe this is
+        self._task.args = plugin_args or {}
+
+        tmp = plugin_class(self._task, self._connection, 
+            self._play_context, self._loader, self._templar, 
+            self._shared_loader_obj
+        )
+
+        return self._rescheck_inner_call(
+           tmp.run(task_vars=ans_varspace or self._ansible_varspace), 
+           str(plugin_class), 'ACTION_PLUGIN', **kwargs
+        )
+
+
+    def exec_module(self, modname, modargs=None, ans_varspace=None, **kwargs):
+        return self._rescheck_inner_call(self._execute_module(
+            module_name=modname, module_args=modargs,
+            task_vars=ans_varspace or self._ansible_varspace
+          ), modname, 'MODULE', **kwargs
+        )
 
 
     def _handle_taskargs(self):
@@ -178,8 +221,7 @@ class BaseAction(ActionBase):
                 if x in args_set:
                     key_hits.append(x)
                     pval = args_set.pop(x)
-
-                args_found[x] = True
+                    args_found[k] = True
 
             if len(key_hits) > 1:
                 raise AnsibleOptionsError(
@@ -278,6 +320,14 @@ class BaseAction(ActionBase):
 
             return result
 
+        except AnsibleInnerExecError as e:
+            result = e.inner_res
+            result['msg'] = \
+               "Calling '{}' ({}) internally failed:"
+               " {}".format(e.call_id, e.call_type, result.get('msg', ''))
+
+            return result
+
         except AnsibleError as e:
             error = e
             stacktrace = traceback.format_exc()
@@ -304,6 +354,7 @@ class BaseAction(ActionBase):
         result['error'] = "{}".format(error)
         result['error_details'] = error_details
         result['stderr'] = stacktrace
+        result['exception'] = stacktrace
 
         return result
 

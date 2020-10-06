@@ -12,6 +12,14 @@ __metaclass__ = type
 
 
 import collections
+import copy
+
+from ansible.errors import AnsibleError
+
+from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert
+
+
+SUBDICT_METAKEY_ANY = '<<<|||--MATCHALL--|||>>>'
 
 
 ## TODO: support other merge strats, make them settable by caller??
@@ -74,4 +82,77 @@ def template_recursive(mapping, templater):
             nm.append(v)
 
     return nm
+
+
+def get_subdict(d, keychain, **kwargs):
+    ansible_assert(SUBDICT_METAKEY_ANY not in keychain, 
+      "use get_subdict only with a simple keychain with just one"
+      " result, use get_subdicts instead for wildcards with"
+      " multiple possible results"
+    )
+
+    d = list(get_subdicts(d, keychain, **kwargs))
+
+    ansible_assert(len(d) == 1, 
+      "get_subdict produced more than one result, this should never happen"
+    )
+
+    return d[0][0]
+
+
+def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
+    if not keychain:
+        yield (d, kcout)
+        return
+
+    if not kciter:
+        kcout = []
+        yield from get_subdicts(d, keychain, iter(keychain), kcout, **kwargs)
+        return
+
+    nextkeys = next(kciter, None)
+
+    if not nextkeys:
+        yield (d, kcout)
+        return
+
+    if nextkeys == SUBDICT_METAKEY_ANY:
+        nextkeys = d.keys()
+    else:
+        nextkeys = [nextkeys]
+
+    for k in nextkeys:
+
+        tmp = d.get(k, None)
+
+        if tmp:
+            ansible_assert(isinstance(tmp, collections.abc.Mapping), 
+              "invalid subdicts keychain {}, child element of key"
+              " '{}' is not a dictionary: {}".format(keychain, k, tmp)
+            )
+        elif kwargs.get('default_empty', False):
+            tmp = {}
+        else:
+            raise AnsibleError(
+               "invalid keychain {}, could not find"
+               " subkey '{}'".format(keychain, k)
+            )
+
+        d = tmp
+
+        kcout.append(k)
+        yield from get_subdicts(
+          d, keychain, kciter, copy.deepcopy(kcout), **kwargs
+        )
+
+
+def set_subdict(d, keychain, val):
+    ansible_assert(keychain, "keychain cannot be empty when setting subdict")
+
+    parent_kc = keychain[:-1]
+    sd = get_subdict(d, parent_kc)
+
+    sd[keychain[-1]] = val
+
+    return d
 

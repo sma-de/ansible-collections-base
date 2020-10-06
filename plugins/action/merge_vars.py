@@ -185,7 +185,7 @@ class ActionModule(BaseAction):
 
           ## argname
           'result_var': {
-            'type': list(string_types), ## class or function or list of types
+            'type': list(string_types), ## function or list of types
             ## ##'type_err': ## custom error message on bad type
             ## 'mandatory': False, ## if unsets defaults to true, except when defaulting is defined
 
@@ -207,7 +207,9 @@ class ActionModule(BaseAction):
           ## other param def sort form for mandatory ones: just the type
           'invars': [[str, dict]],
 
-          'update_facts': (bool, True),
+          ## update: as more or less all standard types are also callable, packing types into list is mandatory now, so outcommented line is illegal and will give bogus results (it will interpret bool as type check function)
+          ##'update_facts': (bool, True),
+          'update_facts': ([bool], True),
 
           'hosts': ([[str]], []),
         })

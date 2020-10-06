@@ -34,7 +34,7 @@
 ###    - maybe some kind of strange arbitrary securiy feature (protection from evil modules??)
 ###
 
-  - ansible.builtin.set_fact:
+  - set_fact:
       _tmp_merge_resvar: >-
         {{ merge_vars_args.result_var | default(None, True) }}
 
