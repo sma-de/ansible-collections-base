@@ -121,10 +121,6 @@ class NormalizerBase(abc.ABC):
 
     def normalize_config(self, config, global_cfg=None, cfgpath_abs=None):
         cfgpath = self.config_path
-        ansible_assert(not cfgpath and not global_cfg,
-            "only root normalizer element can have an empty config path"
-        )
-
         global_cfg = global_cfg or config
         cfgpath_abs = cfgpath_abs or []
 

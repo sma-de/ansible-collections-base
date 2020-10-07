@@ -22,8 +22,12 @@ from ansible.errors import AnsibleError, AnsibleInternalError, AnsibleOptionsErr
 from ansible.module_utils._text import to_native
 from ansible.module_utils.six import iteritems
 from ansible.plugins.action import ActionBase, set_fact
+from ansible.utils.display import Display
 
 from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert
+
+
+display = Display()
 
 
 KWARG_UNSET = object()
@@ -69,17 +73,15 @@ def check_paramtype(param, value, typespec, errmsg):
     if callable(typespec):
         return typespec(value)
 
-    ctspec = typespec
-
-    if isinstance(typespec, list):
-        if len(typespec) > 0 and isinstance(typespec[0], list):
-            ctspec = [list]
-    else:
-        ctspec = [typespec]
-
     type_match = False
 
-    for xt in ctspec:
+    for xt in typespec:
+        sub_types = None
+
+        if isinstance(xt, list):
+            xt = list
+            sub_types = xt
+
         if isinstance(value, xt):
             type_match = True
             break
@@ -88,23 +90,24 @@ def check_paramtype(param, value, typespec, errmsg):
         if not errmsg:
             errmsg = "Must be one of the following types: {}".format(typespec)
         raise AnsibleOptionsError(
-          "Value '{}' for param '{}' failed its type"
-          " check: {}".format(value, param, errmsg)
+           "Value '{}' for param '{}' failed its type"
+           " check: {}".format(value, param, errmsg)
         )
 
     if isinstance(value, list):
-        ansible_assert(len(typespec) == 1, 'Bad typespec')
+        ansible_assert(sub_types, 'bad typespec')
+
         for vx in value:
-            check_paramtype(param, vx, typespec[0], errmsg)
+            check_paramtype(param, vx, sub_types, errmsg)
 
 
 class AnsibleInnerExecError(AnsibleError):
 
     def __init__(self, calltype, call_id, inner_res):
       super(AnsibleInnerExecError, self).__init__('')
-      self.inner_res
-      self.call_type
-      self.call_id
+      self.inner_res = inner_res
+      self.call_type = calltype
+      self.call_id = call_id
 
 
 class BaseAction(ActionBase):
@@ -131,7 +134,7 @@ class BaseAction(ActionBase):
         if ignore_error:
             return inner_res
 
-        if inner_res.get('failed', True):
+        if inner_res.get('failed', False):
             raise AnsibleInnerExecError(call_type, call_id, inner_res)
 
         return inner_res
@@ -156,17 +159,64 @@ class BaseAction(ActionBase):
 
 
     def exec_module(self, modname, modargs=None, ans_varspace=None, **kwargs):
-        return self._rescheck_inner_call(self._execute_module(
-            module_name=modname, module_args=modargs,
-            task_vars=ans_varspace or self._ansible_varspace
-          ), modname, 'MODULE', **kwargs
+        display.vv("[ACTION_PLUGIN] :: execute module: {}".format(modname))
+        display.vvv(
+           "[ACTION_PLUGIN] :: execute module args: {}".format(modargs)
         )
 
+        if modname == 'shell':
+            ##
+            ## for some strange reason executing shell here fails 
+            ## internally, while using command works fine, luckily 
+            ## shell and command are extremely similar so we will 
+            ## map shell calls to command here for now
+            ##
+            ## TODO: find solution for bug described above
+            ##
+            ## bug-notes:
+            ##
+            ##   - only one context tested yet (connection docker, call from inside action plugin), so maybe this is important or maybe not
+            ##
+            ##   - happens for any cmd, even extremly simple ones like: echo foo
+            ##
+            ##   - calling shell module normally from playbook / tasklist / role works fine
+            ##
+            ##   - doesn't matter if name is 'shell' or 'ansible.builtin.shell'
+            ##
 
-    def _handle_taskargs(self):
-        argspec = copy.deepcopy(self.argspec)
+            if not isinstance(modargs, collections.abc.Mapping):
+                # assume freeform string
+                modargs = {'cmd': modargs}
 
-        args_set = copy.deepcopy(self._task.args)
+            tmp = []
+            tmp.append(modargs.get('executable', '/bin/sh'))
+
+            ## TODO: this depends on executable
+            tmp.append('-c')
+
+            tmp.append(modargs.pop('cmd'))
+
+            modargs['argv'] = tmp
+            modname = 'command'
+
+        res = self._execute_module(module_name=modname, module_args=modargs,
+            task_vars=ans_varspace or self._ansible_varspace
+        )
+
+        display.vvv(
+           "[ACTION_PLUGIN] :: execute module result: {}".format(res)
+        )
+
+        return self._rescheck_inner_call(res, modname, 'MODULE', **kwargs)
+
+
+    def _handle_taskargs(self, argspec, args_in, args_out):
+        display.vvv(
+           "[ACTION_PLUGIN] :: handle args, argspec: {}".format(argspec)
+        )
+
+        argspec = copy.deepcopy(argspec)
+        args_set = copy.deepcopy(args_in)
 
         args_found = {}
 
@@ -188,6 +238,8 @@ class BaseAction(ActionBase):
                         tmp['type'] = vx
                     elif i == 1:
                         tmp['defaulting'] = { 'fallback': vx }
+                    elif i == 2:
+                        tmp['subspec'] = vx
                     else:
                         raise AnsibleInternalError(
                           "Unsupported short form argspec tuple: '{}'".format(v)
@@ -205,6 +257,7 @@ class BaseAction(ActionBase):
             )
 
             vdef = v.get('defaulting', None)
+
             mandatory = not vdef
 
             ## TODO: min and max sizes for collection types
@@ -237,7 +290,12 @@ class BaseAction(ActionBase):
             ## defaulting mechanism, proceed with value tests
             check_paramtype(k, pval, v['type'], v.get('type_err', None))
 
-            self._taskparams[k] = pval
+            args_out[k] = pval
+
+            subspec = v.get('subspec', None)
+
+            if isinstance(pval, collections.abc.Mapping) and subspec:
+                self._handle_taskargs(subspec, pval, pval)
 
         if args_set:
             raise AnsibleOptionsError(
@@ -287,7 +345,7 @@ class BaseAction(ActionBase):
         self._ansible_varspace = task_vars
 
         # handle args / params for this task
-        self._handle_taskargs()
+        self._handle_taskargs(self.argspec, self._task.args, self._taskparams)
 
         errmsg = None
         error_details = {}
@@ -323,7 +381,7 @@ class BaseAction(ActionBase):
         except AnsibleInnerExecError as e:
             result = e.inner_res
             result['msg'] = \
-               "Calling '{}' ({}) internally failed:"
+               "Calling '{}' ({}) internally failed:"\
                " {}".format(e.call_id, e.call_type, result.get('msg', ''))
 
             return result
