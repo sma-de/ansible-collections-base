@@ -122,7 +122,6 @@ def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
         nextkeys = [nextkeys]
 
     for k in nextkeys:
-
         tmp = d.get(k, None)
 
         if tmp:

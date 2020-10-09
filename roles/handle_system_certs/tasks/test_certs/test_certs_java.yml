@@ -1,0 +1,17 @@
+---
+
+  - name: copy java test mini prog to remote  ==>>  {{ _test_certs_urliter }}
+    ansible.builtin.template:
+      src: CheckSsl.java.j2
+      dest: "{{ _tmp_ssltest_tmpdir.path }}/CheckSsl.java"
+    changed_when: false
+
+
+  - name: compile and run java test mini prog  ==>>  {{ _test_certs_urliter }}
+    shell:
+      cmd: >-
+        cd '{{ _tmp_ssltest_tmpdir.path }}'
+        && {{ handle_system_certs_args_normed.eco_systems.java.jvm_homedir }}/bin/javac CheckSsl.java 
+        && {{ handle_system_certs_args_normed.eco_systems.java.jvm_homedir }}/bin/java CheckSsl
+    changed_when: false
+

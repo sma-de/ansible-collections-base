@@ -1,0 +1,16 @@
+---
+
+  - name: copy python test mini script to remote  ==>>  {{ _test_certs_urliter }}
+    ansible.builtin.template:
+      src: check_ssl.py.j2
+      dest: "{{ _tmp_ssltest_tmpdir.path }}/check_ssl.py"
+    changed_when: false
+
+
+  - name: run python test mini script  ==>>  {{ _test_certs_urliter }}
+    shell:
+      cmd: >-
+        cd '{{ _tmp_ssltest_tmpdir.path }}'
+        && '{{ handle_system_certs_args_normed.eco_systems.python.python_binary }}' check_ssl.py
+    changed_when: false
+

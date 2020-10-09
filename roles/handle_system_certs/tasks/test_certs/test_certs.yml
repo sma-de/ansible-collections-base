@@ -1,0 +1,83 @@
+---
+
+  - name: some test move files to remote, create a temp dir for that
+    ansible.builtin.tempfile:
+      state: directory
+    register: _tmp_ssltest_tmpdir
+
+
+    ##
+    ## this module / action plugin works like linux 'which' command, 
+    ## so given a potential command name, it determines if this command 
+    ## is reachable from $PATH on remote host and returns the absolute 
+    ## path of this binary when found
+    ##
+    ## note: this does not use linux which internally only shell 
+    ##   primitives, which means A) no additional dependencies and B) behaviour might differ slightly
+    ##
+  - smabot.base.command_which:
+      ##
+      ## in the default case just give the command name
+      ##
+      cmd: curl
+
+      ## alternativly one can also specify a priority sorted list of command name aliases, command_which will test each of them until the first matches
+      ## cmd: 
+      ##   - python
+      ##   - python3
+      ##   - python2
+
+      ##
+      ## optionally one can additionally specify some test arguments, 
+      ## on default we dont check if the command actually works, only 
+      ## if it exists or not, when these are specified a test call of 
+      ## the command will be performed and the mdoule will fail if 
+      ## the test call fails
+      ##
+      ## obviously it should be something simple like get version which 
+      ## is expected to always work in any environment without side 
+      ## effects like starting server or changing configs
+      ##
+      test_args:
+
+        - "--version"
+
+    register: _curl_test
+
+    # be aware that on default this module will not fail when 
+    # command cannot be found, if this is wanted do something 
+    # like the following:
+    ##failed_when: _curl_test.abspath is falsy
+
+
+  - smabot.base.warn:
+      msg: >-
+        curl seems not be installed or accessable but it is needed 
+        for basic ssl cert test, test will be skipped
+    when: _curl_test.abspath is falsy
+
+
+  - name: run simple curl test to check if certs are working properly
+    shell: 
+      cmd: curl -vv "{{ _test_certs_urliter }}" > /dev/null
+    when: _curl_test.abspath is truthy
+
+    ## this is a simple test which is on default always yellow, 
+    ## prefer it to be always green in this case
+    changed_when: false
+
+
+    ## TODO: this test needs a java compiler on remote, so make sure to only run when its exists
+  - include_tasks: test_certs_java.yml
+    when: handle_system_certs_args_normed.eco_systems.java.jvm_homedir is truthy
+
+
+  - include_tasks: test_certs_python.yml
+    ##when: handle_system_certs_args_normed.eco_systems.python.python_binary is truthy
+
+
+  - name: remove testing tmpdir
+    ansible.builtin.file:
+      path: "{{ _tmp_ssltest_tmpdir.path }}"
+      state: absent
+

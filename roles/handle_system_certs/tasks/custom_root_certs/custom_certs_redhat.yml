@@ -1,0 +1,29 @@
+---
+
+  - set_fact:
+      _root_cert_handled: true
+      _certs_basedir: /etc/pki/ca-trust/source/anchors
+
+
+  - name: ensure custom root cert directory
+    ansible.builtin.file:
+      path: "{{ _certs_basedir }}"
+      state: directory
+
+
+  - name: copy root cert to target
+    ansible.builtin.copy:
+      src: "{{ _cert_file }}"
+      dest: "{{ _certs_basedir}}/{{ _cert_file | basename }}"
+    register: _copy_res
+
+
+    ## TODO: to notifier
+  - name: update ca trust
+    block:
+
+      - shell: update-ca-trust enable
+      - shell: update-ca-trust
+
+    when: _copy_res is changed
+

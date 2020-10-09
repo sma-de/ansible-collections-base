@@ -1,0 +1,70 @@
+---
+
+  - smabot.base.normalize_sslcert_cfg:
+    register: _tmp_sslcert_cfg
+
+  - set_fact:
+      ## ok, this is new, here not even the mighty magic legacy set_fact can update / overwrite handle_system_certs_args var, maybe because this is originally set as by "vars:" for a role include (??)
+      ##handle_system_certs_args: "{{ _tmp_sslcert_cfg.normalized }}"
+      handle_system_certs_args_normed: "{{ _tmp_sslcert_cfg.normalized }}"
+
+      ##
+      ## prepare "result var" of this role
+      ##
+      handle_system_certs_result:
+        ##
+        ## some systems (e.g. python) need specific environment 
+        ## variables to be set for proper ssl certing
+        ##
+        envvars: {}
+
+
+    ##
+    ## as different different distros can often be in its details, 
+    ## these packages seems to conveniently have the same name for 
+    ## all distros we had to handle yet
+    ##
+  - name: install standard certificate packages
+    package: 
+      name: 
+        - ca-certificates
+      state: present
+
+
+    ## TODO: this might be better as facts plugin??
+  - include_tasks: determine_os_truststore.yml
+
+
+    ## if active, handle java ssl certs
+  - include_tasks: eco_systems/java/handle_java_certs.yml
+    when: handle_system_certs_args_normed.eco_systems.java.activate
+ 
+
+    ## if active, handle python ssl certs
+  - include_tasks: eco_systems/python/handle_python.yml
+    when: handle_system_certs_args_normed.eco_systems.python.activate
+
+
+    ## optionally handle custom root certs
+  - include_tasks: custom_root_certs/handle_custom_root_certs.yml
+    loop: >-
+      {{ handle_system_certs_args_normed.custom_root_certs | default([], True) }}
+
+    loop_control:
+      loop_var: _custom_rootcert_iter
+
+
+    ## optionally test if certs are working
+  - block:
+
+      - include_tasks: test_certs/test_certs.yml
+        loop: >-
+          {{ handle_system_certs_args_normed.test_urls | default([], True) }}
+
+        loop_control:
+          loop_var: _test_certs_urliter
+
+    ## note: if some ssl systems needs envvars set, 
+    ##   we obviously also must set them for our tests
+    environment: "{{ handle_system_certs_result.envvars }}"
+

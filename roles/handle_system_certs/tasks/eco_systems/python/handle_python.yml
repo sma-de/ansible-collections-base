@@ -1,0 +1,25 @@
+---
+
+    ##
+    ## note: properly setting an environment variable generically is 
+    ##   actually quite hard, there are many different ways wich 
+    ##   different advantadges and disadvantadges, it also varies by 
+    ##   distro or if we want to set it for a (docker) container or 
+    ##   want to use it in ansible itself, so we actually dont even 
+    ##   try to set it here, properly, we just "return" the correct 
+    ##   env var(s) per ansible var and the caller of this role is 
+    ##   responsible for properly peraring its environment
+    ##
+  - name: >-
+      python ssl cert handling needs envvars set, dont try to set
+      them here, just "return" it with ansible var
+      'handle_system_certs_result', caller is responsible for 
+      making it avaible in target environment
+
+    set_fact:
+      handle_system_certs_result: >- 
+        {{ handle_system_certs_result | combine({'envvars': {
+             'REQUESTS_CA_BUNDLE': handle_system_certs_result.os_truststore 
+           }, }, recursive=True)
+        }}
+

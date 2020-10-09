@@ -1,0 +1,24 @@
+---
+
+  - set_fact:
+      _cert_file: "{{ _rootcert_iter.src | default(_rootcert_iter) }}"
+
+
+  - set_fact:
+      _root_cert_handled: false
+
+
+  - include_tasks: custom_certs_redhat.yml
+    when: ansible_os_family == "RedHat"
+
+
+    ##
+    ## note: we will use this actually not only for debian based 
+    ##   systems but try it as a general fallback clause, not really 
+    ##   sure if it works for many not debian based distros, but we 
+    ##   know that it works at least for alpine, too
+    ##
+  - include_tasks: custom_certs_debian.yml
+    ##when: ansible_os_family == "Debian"
+    when: not _root_cert_handled
+

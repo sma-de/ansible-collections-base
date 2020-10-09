@@ -1,0 +1,33 @@
+---
+
+  - name: check that root certificate exists
+    ansible.builtin.stat:
+      path: "{{ _custom_rootcert_iter }}"
+    become: no
+    delegate_to: localhost
+    register: _result
+    failed_when: 
+      - not _result.stat.exists
+      - not _result.stat.isreg and not _result.stat.isdir
+
+
+    ## handle root cert(s) if given path specifies a single file
+  - include_tasks: handle_root_cert.yml
+    loop: "{{ [ _custom_rootcert_iter ] }}"
+    loop_control:
+      loop_var: _rootcert_iter
+    when: 
+      - _result.stat.isreg
+
+
+    ## handle root cert(s) if given path specifies a directory, 
+    ## in that case assume all regular files inside this dir to 
+    ## be custom root certs
+  - include_tasks: handle_root_cert.yml
+    loop: "{{ q('community.general.filetree', _custom_rootcert_iter) }}"
+    loop_control:
+      loop_var: _rootcert_iter
+    when: 
+      - _result.stat.isdir
+      - _rootcert_iter.state == 'file'
+

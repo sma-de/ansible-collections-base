@@ -1,0 +1,20 @@
+---
+
+  - set_fact:
+      _tmp_os_truststore_handled: false
+
+
+  - include_tasks: determine_ostrust_alpine.yml
+    when: ansible_os_family == "Alpine"
+
+  - include_tasks: determine_ostrust_debian.yml
+    when: ansible_os_family == "Debian"
+
+  - include_tasks: determine_ostrust_redhat.yml
+    when: ansible_os_family == "RedHat"
+
+
+  - ansible.builtin.assert:
+      that: "{{ _tmp_os_truststore_handled }}"
+      fail_msg: "Unsupported OS family: {{ ansible_os_family }}"
+

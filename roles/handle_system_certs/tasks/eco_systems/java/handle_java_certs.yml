@@ -1,0 +1,17 @@
+---
+
+  - set_fact:
+      _tmp_java_cert_handled: false
+
+
+  - include_tasks: java_certs_alpine.yml
+    when: ansible_os_family == "Alpine"
+
+  - include_tasks: java_certs_debian.yml
+    when: ansible_os_family == "Debian"
+
+
+  - ansible.builtin.assert:
+      that: "{{ _tmp_java_cert_handled }}"
+      fail_msg: "Unsupported OS family: {{ ansible_os_family }}"
+

@@ -1,0 +1,9 @@
+---
+
+  - set_fact:
+      _tmp_os_truststore_handled: true
+
+      handle_system_certs_result: >- 
+        {{ handle_system_certs_result 
+         | combine({'os_truststore': '/etc/pki/tls/certs/ca-bundle.crt'}) }}
+

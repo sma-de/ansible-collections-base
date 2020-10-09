@@ -69,7 +69,8 @@ class DefaultSetterMappinKey(DefaultSetterBase):
 
 class NormalizerBase(abc.ABC):
 
-    def __init__(self, default_setters=None, sub_normalizers=None):
+    def __init__(self, pluginref, default_setters=None, sub_normalizers=None):
+        self.pluginref = pluginref
         self.sub_normalizers = sub_normalizers
         self.default_setters = default_setters
 
@@ -127,7 +128,7 @@ class NormalizerBase(abc.ABC):
         ## note: we cannot iterate "inplace" here, as we also modify 
         ##   the dict inside the loop, we solve this by tmp saving 
         ##   iterator first as list
-        sub_dicts = list(get_subdicts(config, cfgpath))
+        sub_dicts = list(get_subdicts(config, cfgpath, default_empty=True))
         for (subcfg, subpath) in sub_dicts:
 
             sp_abs = cfgpath_abs[:]

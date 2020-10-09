@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+
+import requests
+import sys
+
+
+print('Check python ssl certs... ')
+
+try:
+    requests.get('{{ _test_certs_urliter }}')
+    print('  ... ok')
+except requests.exceptions.SSLError:
+    print('  ... failed')
+    sys.exit(1)
+

@@ -1,0 +1,32 @@
+---
+
+  - set_fact:
+      _certs_basedir: /usr/local/share/ca-certificates
+
+
+  - name: ensure custom root cert directory
+    ansible.builtin.file:
+      path: "{{ _certs_basedir }}"
+      state: directory
+
+
+    ##
+    ## note: distros can differ here in the exact format needed for custom 
+    ##   root certs to work, luckily the most strict one works for all
+    ##
+    ##   alpine:  root certs can be arbitrary named and can also be symlinked here
+    ##
+    ##   debian: root certs must by "physical" files and must end with ".crt"
+    ##
+  - name: copy root cert to target
+    ansible.builtin.copy:
+      src: "{{ _cert_file }}"
+      dest: "{{ _certs_basedir}}/{{ _cert_file | basename }}.crt"
+    register: _copy_res
+
+
+    ## TODO: as this potentially looped for many certs, but this is only needed once at the end, make this a notifyer -> listener thing
+  - name: update ca trust
+    shell: update-ca-certificates
+    when: _copy_res is changed
+

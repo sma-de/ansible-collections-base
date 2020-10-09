@@ -24,7 +24,8 @@ from ansible.module_utils.six import iteritems
 from ansible.plugins.action import ActionBase, set_fact
 from ansible.utils.display import Display
 
-from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert
+from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import merge_dicts, template_recursive
+from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert, detemplate
 
 
 display = Display()
@@ -34,7 +35,7 @@ KWARG_UNSET = object()
 MAGIC_ARGSPECKEY_META = '___args_meta'
 
 
-def default_param_value(pname, defcfg, ans_varspace):
+def default_param_value(pname, defcfg, ans_varspace, templater):
     if not defcfg:
         raise AnsibleOptionsError(
           "Must set mandatory param '{}'".format(pname)
@@ -44,7 +45,10 @@ def default_param_value(pname, defcfg, ans_varspace):
     ansvars = defcfg.get('ansvar', [])
     for av in ansvars:
         if av in ans_varspace:
-            return ans_varspace[av]
+            ## note: at least sometimes when we get values 
+            ## from ansible varspace, they are still template 
+            ## string, not the templated value
+            return detemplate(ans_varspace[av], templater)
 
     # check if we have a matching envvar
     envvars = defcfg.get('env', [])
@@ -52,7 +56,7 @@ def default_param_value(pname, defcfg, ans_varspace):
 
     for e in envvars:
         if e in envspace:
-            return envspace[e]
+            return detemplate(envspace[e], templater)
 
     # use hardcoded fallback
     if 'fallback' in defcfg:
@@ -284,7 +288,9 @@ class BaseAction(ActionBase):
 
             if len(key_hits) == 0: 
                 # param unset, do defaulting
-                pval = default_param_value(k, vdef, self._ansible_varspace)
+                pval = default_param_value(
+                   k, vdef, self._ansible_varspace, self._templar
+                )
 
             ## at this point param is either set explicitly or by 
             ## defaulting mechanism, proceed with value tests
@@ -320,8 +326,11 @@ class BaseAction(ActionBase):
 
     def get_ansible_var(self, var, default=KWARG_UNSET):
         if default != KWARG_UNSET:
-            return self._ansible_varspace.get(var, default)
-        return self._ansible_varspace[var]
+            return detemplate(
+              self._ansible_varspace.get(var, default), self._templar
+            )
+
+        return detemplate(self._ansible_varspace[var], self._templar)
 
 
     def set_ansible_vars(self, **kwargs):

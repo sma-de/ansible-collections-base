@@ -9,10 +9,12 @@ authors:
     - "Mirko Wilhelmi <Mirko.Wilhelmi@sma.de>"
 ##    - "Author2 (https://author2.example.com)"
 ##    - "Author3 <author3@example.com>"
-##dependencies:
+#
+dependencies:
 ##    "other_namespace.collection1": ">=1.0.0"
 ##    "other_namespace.collection2": ">=2.0.0,<3.0.0"
-##    "anderson55.my_collection": "*"    # note: "*" selects the highest version available
+  "community.general": "*"    # note: "*" selects the highest version available
+
 ##license:
 ##    - "MIT"
 ##tags:

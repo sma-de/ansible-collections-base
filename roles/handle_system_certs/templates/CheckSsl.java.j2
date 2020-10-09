@@ -1,0 +1,29 @@
+
+import java.io.*;
+import java.net.*;
+
+
+class CheckSsl {
+
+    public static void main(String[] args) throws MalformedURLException, IOException, ProtocolException {
+
+        System.out.println("Checking java ssl / certs ...");
+
+        URL url = new URL("{{ _test_certs_urliter }}");
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.setRequestMethod("GET");
+
+        int rc = con.getResponseCode();
+
+        if (rc > 299) {
+          System.out.println("  ...  failed");
+        } else {
+          System.out.println("  ...  ok");
+          rc = 0;
+        }
+
+        System.exit(rc);
+    }
+
+}
+
