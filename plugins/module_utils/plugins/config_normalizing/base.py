@@ -21,7 +21,7 @@ from ansible.module_utils.six import iteritems, string_types
 ####from ansible.module_utils.common._collections_compat import MutableMapping
 ##from ansible.utils.display import Display
 
-from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import merge_dicts, get_subdicts, set_subdict
+from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import merge_dicts, get_subdict, get_subdicts, set_subdict, get_partdict
 from ansible_collections.smabot.base.plugins.module_utils.plugins.action_base import BaseAction##, MAGIC_ARGSPECKEY_META
 from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert
 from ansible_collections.smabot.base.plugins.action import merge_vars
@@ -78,6 +78,16 @@ class NormalizerBase(abc.ABC):
     def config_path(self):
         ## the "path" / config key chain this normalizer is responsible for
         None
+
+
+    def get_parentcfg(self, cfg, cfgpath_abs, level=1):
+        return get_subdict(cfg, cfgpath_abs[: -level])
+
+    def copy_from_parent(self, cfg, cfgpath_abs, copy_keys, **kwargs):
+        pacfg = self.get_parentcfg(cfg, cfgpath_abs, **kwargs)
+
+        return get_partdict(pacfg, *copy_keys)
+
 
     def __call__(self, *args, **kwargs):
         return self.normalize_config(*args, **kwargs)

@@ -160,3 +160,26 @@ def set_subdict(d, keychain, val):
 
     return d
 
+
+def get_partdict(d, *keys, include=True):
+    res = {}
+
+    if not keys:
+        res.update(d)
+        return res
+
+    if include:
+        ## keys given are included
+        for k in keys:
+            res[k] = d[k]
+
+        return res
+
+    ## else: keys are excluded
+    res.update(d)
+
+    for k in keys:
+        del(res[k])
+
+    return res
+
