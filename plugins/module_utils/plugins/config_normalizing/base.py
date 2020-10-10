@@ -128,7 +128,10 @@ class NormalizerBase(abc.ABC):
         ## note: we cannot iterate "inplace" here, as we also modify 
         ##   the dict inside the loop, we solve this by tmp saving 
         ##   iterator first as list
-        sub_dicts = list(get_subdicts(config, cfgpath, default_empty=True))
+        sub_dicts = list(get_subdicts(config, cfgpath, 
+            default_empty=True, allow_nondict_leaves=True
+        ))
+
         for (subcfg, subpath) in sub_dicts:
 
             sp_abs = cfgpath_abs[:]
@@ -136,10 +139,10 @@ class NormalizerBase(abc.ABC):
             if subpath:
                 sp_abs += subpath
 
-            self._handle_default_setters(global_cfg, subcfg, sp_abs)
-            self._handle_specifics_presub(global_cfg, subcfg, sp_abs)
-            self._handle_sub_normalizers(global_cfg, subcfg, sp_abs)
-            self._handle_specifics_postsub(global_cfg, subcfg, sp_abs)
+            subcfg = self._handle_default_setters(global_cfg, subcfg, sp_abs)
+            subcfg = self._handle_specifics_presub(global_cfg, subcfg, sp_abs)
+            subcfg = self._handle_sub_normalizers(global_cfg, subcfg, sp_abs)
+            subcfg = self._handle_specifics_postsub(global_cfg, subcfg, sp_abs)
 
             if subpath:
                 set_subdict(config, subpath, subcfg)

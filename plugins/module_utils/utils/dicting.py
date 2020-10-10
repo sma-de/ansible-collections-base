@@ -125,10 +125,15 @@ def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
         tmp = d.get(k, None)
 
         if tmp:
-            ansible_assert(isinstance(tmp, collections.abc.Mapping), 
-              "invalid subdicts keychain {}, child element of key"
-              " '{}' is not a dictionary: {}".format(keychain, k, tmp)
-            )
+            if not isinstance(tmp, collections.abc.Mapping):
+                ansible_assert(kwargs.get('allow_nondict_leaves', False),
+                  "invalid subdicts keychain {}, child element of key"
+                  " '{}' is not a dictionary: {}".format(keychain, k, tmp)
+                )
+
+                yield (d, kcout)
+                continue
+
         elif kwargs.get('default_empty', False):
             tmp = {}
         else:
