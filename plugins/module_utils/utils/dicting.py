@@ -131,7 +131,7 @@ def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
                   " '{}' is not a dictionary: {}".format(keychain, k, tmp)
                 )
 
-                yield (d, kcout)
+                yield (d, copy.deepcopy(kcout))
                 continue
 
         elif kwargs.get('default_empty', False):
