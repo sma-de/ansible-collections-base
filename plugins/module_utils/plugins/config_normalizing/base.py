@@ -79,13 +79,15 @@ class NormalizerBase(abc.ABC):
         ## the "path" / config key chain this normalizer is responsible for
         None
 
+    @property
+    def simpleform_key(self):
+        return None
 
     def get_parentcfg(self, cfg, cfgpath_abs, level=1):
         return get_subdict(cfg, cfgpath_abs[: -level])
 
     def copy_from_parent(self, cfg, cfgpath_abs, copy_keys, **kwargs):
         pacfg = self.get_parentcfg(cfg, cfgpath_abs, **kwargs)
-
         return get_partdict(pacfg, *copy_keys)
 
 
@@ -129,6 +131,23 @@ class NormalizerBase(abc.ABC):
     def _handle_specifics_postsub(self, cfg, my_subcfg, cfgpath_abs):
         return my_subcfg
 
+    def _simple_to_dict(self, cfg, my_subcfg, cfgpath_abs):
+        if isinstance(my_subcfg, collections.abc.Mapping):
+            return my_subcfg
+
+        sk = self.simpleform_key
+
+        if not sk:
+            raise AnsibleOptionsError(
+               "As no simpleform_key is specified sub-config for"\
+               " keypath '{}' must be a dictionary".format(
+                   '.'.join(cfgpath_abs)
+               )
+            )
+
+        my_subcfg = { sk: my_subcfg }
+        return my_subcfg
+
 
     def normalize_config(self, config, global_cfg=None, cfgpath_abs=None):
         cfgpath = self.config_path
@@ -148,6 +167,11 @@ class NormalizerBase(abc.ABC):
 
             if subpath:
                 sp_abs += subpath
+
+            subcfg = self._simple_to_dict(global_cfg, subcfg, sp_abs)
+
+            if subpath:
+                set_subdict(config, subpath, subcfg)
 
             subcfg = self._handle_default_setters(global_cfg, subcfg, sp_abs)
             subcfg = self._handle_specifics_presub(global_cfg, subcfg, sp_abs)

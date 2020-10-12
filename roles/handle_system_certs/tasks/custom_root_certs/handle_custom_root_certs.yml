@@ -7,8 +7,7 @@
     delegate_to: localhost
     register: _result
     failed_when: 
-      - not _result.stat.exists
-      - not _result.stat.isreg and not _result.stat.isdir
+      - not _result.stat.exists or (not _result.stat.isreg and not _result.stat.isdir)
 
 
     ## handle root cert(s) if given path specifies a single file
