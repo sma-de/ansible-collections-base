@@ -1,0 +1,16 @@
+---
+
+  - smabot.base.normalize_rectemplate_cfg:
+    register: _tmp_rectemplatecfg
+
+  - set_fact:
+      template_recursive_args_normed: "{{ _tmp_rectemplatecfg.normalized }}"
+
+
+  - include_tasks: handle_inpath.yml
+    loop: >-
+      {{ template_recursive_args_normed.paths | dict2items() }}
+
+    loop_control:
+      loop_var: _inpath_iter
+

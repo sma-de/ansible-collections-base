@@ -180,3 +180,14 @@ def get_partdict(d, *keys, include=True):
 
     return res
 
+
+def setdefault_none(d, key, defval):
+      v = d.get(key, None)
+
+      if v is None:
+          v = defval
+
+      d[key] = v
+
+      return v
+

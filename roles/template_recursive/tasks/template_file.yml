@@ -1,0 +1,44 @@
+---
+
+  - debug:
+      var: _rectemplate_files_iter
+
+
+  - set_fact:
+      _template_file_pathsfx: >-
+        {{ _rectemplate_files_iter.path 
+         | smabot.base.strip_file_endings(endings=_inpath_iter.value.path_modifiers.strip_endings) }}
+    when: _template_file_pathsfx is falsy
+
+  - set_fact:
+      _tmp_template_modargs: >-
+        {{ _inpath_iter.value.copy_api 
+         | combine({
+             'src': _rectemplate_files_iter.src, 
+             'dest': _template_file_pathpfx ~ _template_file_pathsfx
+           }) 
+        }}
+
+
+  - name: ensure template file base dir exists  ==>>  {{ _tmp_template_modargs.dest | dirname }}
+    file:
+      path: "{{ _tmp_template_modargs.dest | dirname }}"
+      state: directory
+
+
+  - name: template file  ==>>  {{ _template_file_pathpfx ~ _rectemplate_files_iter.path  }}
+    ansible.builtin.template: "{{ _tmp_template_modargs }}"
+
+    ## note: interestingly outcommented below fails because it seems the param dict is not properly parsed when computation / filtering is going on, but when first write the result to a tmp var, it works fine
+##    ansible.builtin.template: >-
+##      {{ _inpath_iter.value.copy_api 
+##       | combine({
+##           'src': _rectemplate_files_iter.src, 
+##           'dest': _template_file_pathpfx ~ _rectemplate_files_iter.path 
+##              | smabot.base.strip_file_endings(endings=_inpath_iter.value.path_modifiers.strip_endings)
+##         }) 
+##      }}
+
+  - set_fact:
+      _template_file_pathsfx: false
+

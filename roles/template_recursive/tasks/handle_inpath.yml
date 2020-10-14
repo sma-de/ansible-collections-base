@@ -1,0 +1,83 @@
+---
+
+  - name: check that file path exists  ==>>  '{{ _inpath_iter.value.src_rel }}'
+    ansible.builtin.stat:
+      path: "{{ _inpath_iter.value.src }}"
+    become: no
+    delegate_to: localhost
+    register: _result
+    failed_when: 
+      - not _result.stat.exists
+
+  - debug:
+      msg: "filetree filter => {{ q('smabot.base.filetree_ex', _inpath_iter.value.src, filters=_inpath_iter.value.filter_criteria) }}"
+
+
+  - set_fact:
+      _template_file_pathpfx: ''
+      _template_file_pathsfx: false
+
+    ##
+    ## if we rec template a dir and if given src path does not end with 
+    ## a slash, copy over as subdir to target, otherwise copy only dir 
+    ## content, this behaviour is analog to ansible file copy and also rsync
+    ##
+  - block:
+
+      - set_fact:
+          _template_file_pathpfx: "{{ _inpath_iter.value.dest }}/"
+
+      - set_fact:
+          _template_file_pathpfx: >-
+            {{ '/'.join([_template_file_pathpfx, _inpath_iter.value.src_rel]) }}/
+        when: _inpath_iter.value.src_rel[-1] != '/'
+
+      - set_fact:
+          _tmp_loopfiles: >-
+            {{ q('smabot.base.filetree_ex', _inpath_iter.value.src, 
+               filters=_inpath_iter.value.filter_criteria)
+            }}
+
+    when: _result.stat.isdir
+
+
+    ##
+    ## for convienience and completness reason also handles just 
+    ## files besides dirs, although there is no real reason to use 
+    ## this role, if you only need to template plain files, as this 
+    ## can be simple done by vanilla ansible
+    ##
+  - block:
+
+        ##
+        ## for a single file the final dest path is just the given 
+        ## config dest path on default
+        ##
+      - set_fact:
+          _template_file_pathsfx: "{{ _inpath_iter.value.dest }}"
+        when: _inpath_iter.value.dest[-1] != '/'
+
+        ##
+        ## if given dest path is a dir (simply decided syntactically based 
+        ## on if it ends with a slash or not), final dest path is src base 
+        ## name copied into dest dir
+        ##
+      - set_fact:
+          _template_file_pathpfx: "{{ _inpath_iter.value.dest }}"
+          _template_file_pathsfx: "{{ _inpath_iter.value.src_rel | basename }}"
+        when: _inpath_iter.value.dest[-1] == '/'
+
+
+      - set_fact:
+          _tmp_loopfiles: 
+            - path: "{{ _inpath_iter.value.src_rel }}" 
+              src: "{{ _inpath_iter.value.src }}"
+
+    when: not _result.stat.isdir
+
+
+  - include_tasks: template_file.yml
+    loop: "{{ _tmp_loopfiles }}"
+    loop_control:
+      loop_var: _rectemplate_files_iter
+

@@ -13,7 +13,8 @@ from ansible.module_utils.six import iteritems, string_types
 from ansible.utils.display import Display
 
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import merge_dicts, template_recursive
-from ansible_collections.smabot.base.plugins.module_utils.plugins.action_base import BaseAction, MAGIC_ARGSPECKEY_META
+from ansible_collections.smabot.base.plugins.module_utils.plugins.plugin_base import MAGIC_ARGSPECKEY_META
+from ansible_collections.smabot.base.plugins.module_utils.plugins.action_base import BaseAction
 
 
 display = Display()

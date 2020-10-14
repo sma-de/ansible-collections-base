@@ -83,6 +83,11 @@ class NormalizerBase(abc.ABC):
     def simpleform_key(self):
         return None
 
+    def _add_defaultsetter(self, kwargs, defkey, defval):
+        defsets = kwargs.setdefault('default_setters', {})
+        defsets[defkey] = defval
+        return kwargs
+
     def get_parentcfg(self, cfg, cfgpath_abs, level=1):
         return get_subdict(cfg, cfgpath_abs[: -level])
 
@@ -187,8 +192,9 @@ class NormalizerBase(abc.ABC):
 class NormalizerNamed(NormalizerBase):
 
     def __init__(self, *args, **kwargs):
-        defsets = kwargs.setdefault('default_setters', {})
-        defsets[self.name_key] = DefaultSetterMappinKey()
+        self._add_defaultsetter(kwargs, 
+           self.name_key, DefaultSetterMappinKey()
+        )
 
         super(NormalizerNamed, self).__init__(*args, **kwargs)
 
