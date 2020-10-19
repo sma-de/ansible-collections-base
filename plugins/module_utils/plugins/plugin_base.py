@@ -161,7 +161,11 @@ class ArgsPlugin():
                     elif i == 1:
                         tmp['defaulting'] = { 'fallback': vx }
                     elif i == 2:
-                        tmp['subspec'] = vx
+                        if dict in tmp['type']:
+                            tmp['subspec'] = vx
+                        else:
+                            tmp['choice'] = vx
+
                     else:
                         raise AnsibleInternalError(
                           "Unsupported short form argspec tuple: '{}'".format(v)
@@ -214,6 +218,27 @@ class ArgsPlugin():
             ## at this point param is either set explicitly or by 
             ## defaulting mechanism, proceed with value tests
             check_paramtype(k, pval, v['type'], v.get('type_err', None))
+
+            ## optionally handle choice
+            choice = v.get('choice', None)
+
+            if choice:
+                ansible_assert(isinstance(choice, list), 
+                   "bad argspec[{}]: choice must be list,"\
+                   " but was '{}': {}".format(k, type(choice), choice)
+                )
+
+                ansible_assert(
+                   not isinstance(pval, (list, collections.abc.Mapping)), 
+                   "bad argspec[{}]: if choice is specified, param"\
+                   " cannot be collection type, it must be scalar".format(k)
+                )
+
+                if pval not in choice:
+                    raise AnsibleOptionsError(
+                       "Bad param '{}': given value was '{}' but it"\
+                       " must be one of these: {}".format(k, pval, choice)
+                    )
 
             args_out[k] = pval
 
