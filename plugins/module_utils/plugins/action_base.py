@@ -51,12 +51,19 @@ class BaseAction(ActionBase, AnsSpaceAndArgsPlugin):
 
 
     def _rescheck_inner_call(self, inner_res, call_id, call_type, 
-        ignore_error=False
+        ignore_error=False, on_error=False
     ):
         if ignore_error:
             return inner_res
 
         if inner_res.get('failed', False):
+
+            if on_error:
+                ignore_error = on_error(inner_res)
+
+            if ignore_error:
+                return inner_res
+
             raise AnsibleInnerExecError(call_type, call_id, inner_res)
 
         return inner_res
