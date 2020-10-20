@@ -1,0 +1,26 @@
+---
+
+conditional_notify_args:
+  taskname: ## optional
+  notify: ## mandatory
+  condition: ## mandatory
+
+
+    # note: as ansible seems not to support either a 
+    #   notify-on-condition, nor does it accept a 
+    #   notify-only task, we need some harmless 
+    #   cheap dummy action here, whoami seems fine
+  - name: >-
+       {{ conditional_notify_args.taskname 
+        | default('notify listeners', True) }}
+
+    debug:
+      msg: "notify listeners"
+
+    notify: "{{ conditional_notify_args.notify }}"
+
+    ## note: naturally notifiers are only fired, when task has 
+    ##   result status changed
+    changed_when: true
+    when: conditional_notify_args.condition
+
