@@ -1,9 +1,11 @@
 ---
 
-conditional_notify_args:
-  taskname: ## optional
-  notify: ## mandatory
-  condition: ## mandatory
+##
+## conditional_notify_args:
+##   taskname: ## optional
+##   notify: ## mandatory
+##   condition: ## mandatory
+##
 
 
     # note: as ansible seems not to support either a 
