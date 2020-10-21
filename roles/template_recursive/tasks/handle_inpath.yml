@@ -9,9 +9,6 @@
     failed_when: 
       - not _result.stat.exists
 
-  - debug:
-      msg: "filetree filter => {{ q('smabot.base.filetree_ex', _inpath_iter.value.src, filters=_inpath_iter.value.filter_criteria) }}"
-
 
   - set_fact:
       _template_file_pathpfx: ''
