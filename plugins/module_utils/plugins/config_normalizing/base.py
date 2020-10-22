@@ -167,6 +167,8 @@ class NormalizerBase(abc.ABC):
         ))
 
         for (subcfg, subpath) in sub_dicts:
+            print("subcfg => " + str(subcfg))
+            print("subpath => " + str(subpath))
 
             sp_abs = cfgpath_abs[:]
 
