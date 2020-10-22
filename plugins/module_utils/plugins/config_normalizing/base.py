@@ -83,9 +83,8 @@ class DefaultSetterFmtStrCfg(DefaultSetterBase):
 
 class DefaultSetterFmtStrSubCfg(DefaultSetterFmtStrCfg):
 
-    def __init__(self, fmtstr, **kwargs):
-        super(DefaultSetterFmtStrSubCfg, self).__init__(**kwargs)
-        self.fmtstr = fmtstr
+    def __init__(self, *args, **kwargs):
+        super(DefaultSetterFmtStrSubCfg, self).__init__(*args, **kwargs)
 
     def _get_defval(self, cfg, my_subcfg, cfgpath_abs):
         return self._formatting_str(my_subcfg)
