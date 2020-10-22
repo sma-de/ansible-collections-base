@@ -32,7 +32,7 @@ class DefaultSetterBase(abc.ABC):
 
     def __init__(self, normalizer_fn=None, default_on_none=True):
         self.normalizer_fn = normalizer_fn
-        self.default_on_none
+        self.default_on_none = default_on_none
 
     def __call__(self, *args, **kwargs):
         tmp = self._get_defval(*args, **kwargs)
