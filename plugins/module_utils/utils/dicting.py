@@ -136,6 +136,7 @@ def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
 
         elif kwargs.get('default_empty', False):
             tmp = {}
+            d[k] = tmp
         else:
             raise AnsibleError(
                "invalid keychain {}, could not find"
