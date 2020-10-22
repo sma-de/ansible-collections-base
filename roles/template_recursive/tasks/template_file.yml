@@ -26,9 +26,18 @@
       state: directory
     when: ansible_os_family != 'Windows'
 
+  - debug:
+      msg: "da dir => {{ _tmp_template_modargs.dest }}"
+
+  - debug:
+      msg: "da dir => {{ _tmp_template_modargs.dest | dirname }}"
+
+  - debug:
+      msg: "da dir => {{ _tmp_template_modargs.dest | win_dirname }}"
+
   - name: ensure template file base dir exists  ==>>  {{ _tmp_template_modargs.dest | dirname }}
     ansible.windows.win_file:
-      path: "{{ _tmp_template_modargs.dest | dirname }}"
+      path: "{{ _tmp_template_modargs.dest | win_dirname }}"
       state: directory
     when: ansible_os_family == 'Windows'
 
