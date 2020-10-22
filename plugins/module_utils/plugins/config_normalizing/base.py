@@ -30,8 +30,9 @@ from ansible_collections.smabot.base.plugins.action import merge_vars
 
 class DefaultSetterBase(abc.ABC):
 
-    def __init__(self, normalizer_fn=None):
+    def __init__(self, normalizer_fn=None, default_on_none=True):
         self.normalizer_fn = normalizer_fn
+        self.default_on_none
 
     def __call__(self, *args, **kwargs):
         tmp = self._get_defval(*args, **kwargs)
@@ -65,6 +66,30 @@ class DefaultSetterMappinKey(DefaultSetterBase):
 
     def _get_defval(self, cfg, my_subcfg, cfgpath_abs):
         return cfgpath_abs[-1]
+
+
+class DefaultSetterFmtStrCfg(DefaultSetterBase):
+
+    def __init__(self, fmtstr, **kwargs):
+        super(DefaultSetterFmtStrCfg, self).__init__(**kwargs)
+        self.fmtstr = fmtstr
+
+    def _formatting_str(self, cfg):
+        return self.fmtstr.format(**cfg)
+
+    def _get_defval(self, cfg, my_subcfg, cfgpath_abs):
+        return self._formatting_str(cfg)
+
+
+class DefaultSetterFmtStrSubCfg(DefaultSetterFmtStrCfg):
+
+    def __init__(self, fmtstr, **kwargs):
+        super(DefaultSetterFmtStrSubCfg, self).__init__(**kwargs)
+        self.fmtstr = fmtstr
+
+    def _get_defval(self, cfg, my_subcfg, cfgpath_abs):
+        return self._formatting_str(my_subcfg)
+
 
 
 class NormalizerBase(abc.ABC):
@@ -110,10 +135,17 @@ class NormalizerBase(abc.ABC):
 
             ## as the name implies default_setters are only active 
             ## when key is not set explicitly
-            if k in my_subcfg: continue
+            if k in my_subcfg: 
+                ## normally only default when key is not set 
+                ## yet, independend of any value
+                if not v.default_on_none: continue
+
+                ## if explicitly mandated, also default when key 
+                ## is set but value is None
+                if my_subcfg[k] is not None: continue
 
             my_subcfg[k] = v(cfg, my_subcfg, cfgpath_abs)
-        
+
         return my_subcfg
 
 
