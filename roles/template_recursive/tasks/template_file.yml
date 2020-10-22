@@ -21,9 +21,16 @@
 
 
   - name: ensure template file base dir exists  ==>>  {{ _tmp_template_modargs.dest | dirname }}
-    file:
+    ansible.builtin.file:
       path: "{{ _tmp_template_modargs.dest | dirname }}"
       state: directory
+    when: ansible_os_family != 'Windows'
+
+  - name: ensure template file base dir exists  ==>>  {{ _tmp_template_modargs.dest | dirname }}
+    ansible.windows.win_file:
+      path: "{{ _tmp_template_modargs.dest | dirname }}"
+      state: directory
+    when: ansible_os_family == 'Windows'
 
 
   - name: template file  ==>>  {{ _template_file_pathpfx ~ _rectemplate_files_iter.path  }}
