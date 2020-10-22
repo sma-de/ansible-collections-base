@@ -161,7 +161,7 @@ class ArgsPlugin():
                     elif i == 1:
                         tmp['defaulting'] = { 'fallback': vx }
                     elif i == 2:
-                        if dict in tmp['type']:
+                        if isinstance(vx, collections.abc.Mapping):
                             tmp['subspec'] = vx
                         else:
                             tmp['choice'] = vx
