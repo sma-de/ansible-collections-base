@@ -72,6 +72,16 @@ class BaseAction(ActionBase, AnsSpaceAndArgsPlugin):
     def run_other_action_plugin(self, plugin_class, 
         ans_varspace=None, plugin_args=None, **kwargs
     ):
+        display.vv(
+           "[ACTION_PLUGIN] :: execute other action plugin: {}".format(
+               plugin_class
+           )
+        )
+
+        display.vvv(
+           "[ACTION_PLUGIN] :: plugin args: {}".format(plugin_args)
+        )
+
         ## TODO: not sure if it is really safe to reuse all this magic ansible interna's for other plugin calls, we need at least to adjust _task.args which again means we need a clean copy of this object at least
         ## note: re-using _task object and imply overwriting args worked, still not sure how safe this is
         self._task.args = plugin_args or {}
