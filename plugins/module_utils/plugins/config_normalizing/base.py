@@ -255,7 +255,9 @@ class ConfigNormalizerBase(BaseAction):
     @property
     def merge_args(self):
         return {
-          'invars': [self.get_taskparam('config_ansvar')],
+          'invars': [{ 
+              'name': self.get_taskparam('config_ansvar'), 'optional': False
+          }],
         }
 
 
@@ -281,11 +283,28 @@ class ConfigNormalizerBase(BaseAction):
         ma = self.merge_args
         mv = self.get_taskparam('merge_vars')
 
+        ## do var merging / inheriting and defaulting, 
+        ##   do this always before the normalisation
         if mv and ma:
-            ## do var merging / inheriting and defaulting, 
-            ##   do this always before the normalisation
             if isinstance(mv, collections.abc.Mapping):
                 merge_dicts(ma, mv)
+
+            tmp = []
+
+            for iv in ma['invars']:
+                if not isinstance(iv, collections.abc.Mapping):
+                    ## assume simple name string
+
+                    ## note: we assume here that any extra vars to merge 
+                    ##   are optional on default, some kind of generic 
+                    ##   defaults which may or may not be provided, if one 
+                    ##   wants to define an extra var as mandatory, it 
+                    ##   must be given as normalized dict form
+                    iv = { 'name': iv, 'optional': True }
+
+                tmp.append(iv)
+                
+            ma['invars'] = tmp
 
             ma['result_var'] = merge_vars.MAGIG_KEY_TOPLVL
             ma['update_facts'] = False

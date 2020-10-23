@@ -265,10 +265,10 @@ class ActionModule(BaseAction):
             if not d: 
                 if not iv.get('optional', False):
                     raise AnsibleOptionsError(
-                        "No invar with given name '{}' was found." \
-                      + " Make sure it is defined or set it to" \
-                      + " optional if being undefined is acceptable" \
-                      + " for this var".format(n)
+                       "No invar with given name '{}' was found." \
+                       " Make sure it is defined or set it to" \
+                       " optional if being undefined is acceptable" \
+                       " for this var".format(n)
                     )
 
                 pos += 1
