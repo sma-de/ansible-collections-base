@@ -341,3 +341,42 @@ class ConfigNormalizerBase(BaseAction):
 
         return result
 
+
+class ConfigNormalizerBaseMerger(ConfigNormalizerBase):
+
+    def __init__(self, *args, 
+        default_merge_vars=None, extra_merge_vars_ans=None, **kwargs
+    ):
+        super(ConfigNormalizerBaseMerger, self).__init__(*args, **kwargs)
+
+        self._extra_merge_vars_ans = extra_merge_vars_ans or []
+        self._default_merge_vars = default_merge_vars or []
+
+
+    @property
+    def merge_args(self):
+        tmp = super(ActionModule, self).merge_args
+
+        tmp['invars'] \
+          += self.get_taskparam('extra_merge_vars') \
+          + self._default_merge_vars
+
+        return tmp
+
+
+    @property
+    def argspec(self):
+        tmp = super(ActionModule, self).argspec
+
+        tmp.update({
+          'extra_merge_vars': {
+             'type': [[]],  ## this means type is a list whith no tpe restrictions for list elements
+             'defaulting': {
+                'ansvar': self._extra_merge_vars_ans,
+                'fallback': [],
+             },
+          }
+        })
+
+        return tmp
+
