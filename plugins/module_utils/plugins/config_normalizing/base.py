@@ -355,7 +355,7 @@ class ConfigNormalizerBaseMerger(ConfigNormalizerBase):
 
     @property
     def merge_args(self):
-        tmp = super(ActionModule, self).merge_args
+        tmp = super(ConfigNormalizerBaseMerger, self).merge_args
 
         tmp['invars'] \
           += self.get_taskparam('extra_merge_vars') \
@@ -366,7 +366,7 @@ class ConfigNormalizerBaseMerger(ConfigNormalizerBase):
 
     @property
     def argspec(self):
-        tmp = super(ActionModule, self).argspec
+        tmp = super(ConfigNormalizerBaseMerger, self).argspec
 
         tmp.update({
           'extra_merge_vars': {
