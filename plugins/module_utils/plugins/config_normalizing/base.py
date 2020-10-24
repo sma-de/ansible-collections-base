@@ -59,6 +59,25 @@ class DefaultSetterConstant(DefaultSetterBase):
         return self.my_value
 
 
+class DefaultSetterAnsVar(DefaultSetterBase):
+
+    def __init__(self, varname, pluginref, **kwargs):
+        super(DefaultSetterConstant, self).__init__(**kwargs)
+        self.ansvar_name = varname
+        self.pluginref = pluginref
+
+    def _get_defval(self, cfg, my_subcfg, cfgpath_abs):
+        return self.pluginref.get_ansible_var(self.ansvar_name)
+
+
+class DefaultSetterHostName(DefaultSetterAnsVar):
+
+    def __init__(self, *args, **kwargs):
+        super(DefaultSetterConstant, self).__init__(
+            'inventory_hostname', *args, **kwargs
+        )
+
+
 class DefaultSetterMappinKey(DefaultSetterBase):
 
     def __init__(self, **kwargs):
