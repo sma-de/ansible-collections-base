@@ -62,7 +62,7 @@ class DefaultSetterConstant(DefaultSetterBase):
 class DefaultSetterAnsVar(DefaultSetterBase):
 
     def __init__(self, varname, pluginref, **kwargs):
-        super(DefaultSetterConstant, self).__init__(**kwargs)
+        super(DefaultSetterAnsVar, self).__init__(**kwargs)
         self.ansvar_name = varname
         self.pluginref = pluginref
 
@@ -73,7 +73,7 @@ class DefaultSetterAnsVar(DefaultSetterBase):
 class DefaultSetterHostName(DefaultSetterAnsVar):
 
     def __init__(self, *args, **kwargs):
-        super(DefaultSetterConstant, self).__init__(
+        super(DefaultSetterHostName, self).__init__(
             'inventory_hostname', *args, **kwargs
         )
 
