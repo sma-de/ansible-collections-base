@@ -87,6 +87,18 @@ class DefaultSetterMappinKey(DefaultSetterBase):
         return cfgpath_abs[-1]
 
 
+class DefaultSetterOtherKey(DefaultSetterBase):
+
+    def __init__(self, refkey, **kwargs):
+        super(DefaultSetterOtherKey, self).__init__(**kwargs)
+        self.refkey = refkey
+
+    def _get_defval(self, cfg, my_subcfg, cfgpath_abs):
+        ## note: obviously one must take care that refkey is 
+        ##   set before key to default
+        return my_subcfg[self.refkey]
+
+
 class DefaultSetterFmtStrCfg(DefaultSetterBase):
 
     def __init__(self, fmtstr, **kwargs):
@@ -115,7 +127,7 @@ class NormalizerBase(abc.ABC):
     def __init__(self, pluginref, default_setters=None, sub_normalizers=None):
         self.pluginref = pluginref
         self.sub_normalizers = sub_normalizers
-        self.default_setters = default_setters
+        self.default_setters = default_setters or {}
 
     @property
     def config_path(self):
@@ -249,9 +261,8 @@ class NormalizerNamed(NormalizerBase):
         super(NormalizerNamed, self).__init__(*args, **kwargs)
 
     @property
-    @abc.abstractmethod
     def name_key(self):
-        pass
+        return 'name'
 
 
 

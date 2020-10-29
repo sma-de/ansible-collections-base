@@ -182,10 +182,13 @@ def get_partdict(d, *keys, include=True):
     return res
 
 
-def setdefault_none(d, key, defval):
+def setdefault_none(d, key, defval=None, defval_fn=None):
       v = d.get(key, None)
 
       if v is None:
+          if defval_fn:
+              defval = defval_fn(defval)
+
           v = defval
 
       d[key] = v
