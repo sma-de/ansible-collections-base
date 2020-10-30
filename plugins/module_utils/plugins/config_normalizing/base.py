@@ -15,7 +15,7 @@ import abc
 import collections
 import uuid
 
-##from ansible.errors import AnsibleOptionsError##, AnsibleError, AnsibleModuleError, AnsibleAssertionError, AnsibleParserError
+from ansible.errors import AnsibleOptionsError##, AnsibleError, AnsibleModuleError, AnsibleAssertionError, AnsibleParserError
 ####from ansible.module_utils._text import to_native
 from ansible.module_utils.six import iteritems, string_types
 ####from ansible.module_utils.common._collections_compat import MutableMapping
