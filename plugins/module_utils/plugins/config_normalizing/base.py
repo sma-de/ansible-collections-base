@@ -80,11 +80,16 @@ class DefaultSetterHostName(DefaultSetterAnsVar):
 
 class DefaultSetterMappinKey(DefaultSetterBase):
 
-    def __init__(self, **kwargs):
+    def __init__(self, level=None, **kwargs):
         super(DefaultSetterMappinKey, self).__init__(**kwargs)
 
+        if level is None:
+            level = -1
+
+        self.level = level
+
     def _get_defval(self, cfg, my_subcfg, cfgpath_abs):
-        return cfgpath_abs[-1]
+        return cfgpath_abs[self.level]
 
 
 class DefaultSetterOtherKey(DefaultSetterBase):
@@ -253,9 +258,9 @@ class NormalizerBase(abc.ABC):
 
 class NormalizerNamed(NormalizerBase):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, mapkey_lvl=None, **kwargs):
         self._add_defaultsetter(kwargs, 
-           self.name_key, DefaultSetterMappinKey()
+           self.name_key, DefaultSetterMappinKey(level=mapkey_lvl)
         )
 
         super(NormalizerNamed, self).__init__(*args, **kwargs)
