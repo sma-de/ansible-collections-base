@@ -19,13 +19,15 @@ from ansible.errors import AnsibleOptionsError##, AnsibleError, AnsibleModuleErr
 ####from ansible.module_utils._text import to_native
 from ansible.module_utils.six import iteritems, string_types
 ####from ansible.module_utils.common._collections_compat import MutableMapping
-##from ansible.utils.display import Display
+from ansible.utils.display import Display
 
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import merge_dicts, get_subdict, get_subdicts, set_subdict, get_partdict
 from ansible_collections.smabot.base.plugins.module_utils.plugins.action_base import BaseAction##, MAGIC_ARGSPECKEY_META
 from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert
 from ansible_collections.smabot.base.plugins.action import merge_vars
 
+
+display = Display()
 
 
 class DefaultSetterBase(abc.ABC):
