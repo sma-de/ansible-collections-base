@@ -226,6 +226,8 @@ class NormalizerBase(abc.ABC):
         global_cfg = global_cfg or config
         cfgpath_abs = cfgpath_abs or []
 
+        display.vvv("Normalize config path: {}".format(cfgpath_abs))
+
         ## note: we cannot iterate "inplace" here, as we also modify 
         ##   the dict inside the loop, we solve this by tmp saving 
         ##   iterator first as list
