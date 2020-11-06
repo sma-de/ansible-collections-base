@@ -16,8 +16,8 @@ dependencies:
   "ansible.windows": "*"
   "community.general": "*"    # note: "*" selects the highest version available
 
-##license:
-##    - "MIT"
+license:
+    - "BSD3"
 ##tags:
 ##    - demo
 ##    - collection
