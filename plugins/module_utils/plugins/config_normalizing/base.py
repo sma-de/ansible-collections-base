@@ -131,9 +131,12 @@ class DefaultSetterFmtStrSubCfg(DefaultSetterFmtStrCfg):
 
 class NormalizerBase(abc.ABC):
 
-    def __init__(self, pluginref, default_setters=None, sub_normalizers=None):
+    def __init__(self, pluginref, default_setters=None, 
+        sub_normalizers=None, sub_normalizers_lazy=None
+    ):
         self.pluginref = pluginref
         self.sub_normalizers = sub_normalizers
+        self.sub_normalizers_lazy = sub_normalizers_lazy
         self.default_setters = default_setters or {}
 
     @property
@@ -187,7 +190,17 @@ class NormalizerBase(abc.ABC):
 
 
     def _handle_sub_normalizers(self, cfg, my_subcfg, cfgpath_abs):
-        subnorms = self.sub_normalizers
+        subnorms = self.sub_normalizers or []
+        subnorms_lazy = self.sub_normalizers_lazy
+
+        if subnorms_lazy:
+            for sn in subnorms_lazy:
+                tmp = list(get_subdicts(my_subcfg, sn.NORMER_CONFIG_PATH, 
+                    default_empty=True, allow_nondict_leaves=True
+                ))
+
+                if tmp:
+                    subnorms.append(sn(self.pluginref))
 
         if not subnorms:
             return my_subcfg
