@@ -153,6 +153,33 @@ class BaseAction(ActionBase, AnsSpaceAndArgsPlugin):
         self._ansvar_updates.update(kwargs)
 
 
+    def get_become_settings(self):
+        ##
+        ## note: directly copy and pasted from base class: 
+        ##   https://github.com/ansible/ansible/blob/6608f3aab338f9e4e871afe77ded7b69e50f23f6/lib/ansible/plugins/action/__init__.py#L217
+        ##
+        ## unfortunately not accessable properly in code
+        ##
+        res = {}
+        if self._connection.become:
+            res['become'] = True
+            res['become_method'] = self._connection.become.name
+
+            res['become_user'] = self._connection.become.get_option(
+              'become_user', playcontext=self._play_context
+            )
+
+            res['become_password'] = self._connection.become.get_option(
+              'become_pass', playcontext=self._play_context
+            )
+
+            res['become_flags'] = self._connection.become.get_option(
+              'become_flags', playcontext=self._play_context
+            )
+
+        return res
+
+
     @abc.abstractmethod
     def run_specific(self, result):
         ''' TODO '''
