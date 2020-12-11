@@ -44,7 +44,7 @@ class KvListFilter(FilterBase):
         res = []
 
         for (k, v) in iteritems(indict):
-            res.append(joiner.join(k, v))
+            res.append(str(k) + joiner + str(v))
 
         return res
 
