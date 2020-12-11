@@ -19,7 +19,11 @@ class ConfigNormerProxy(NormalizerBase):
 
 
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
-        proxy_proxy = my_subcfg['proxy']
+        proxy_proxy = my_subcfg.get('proxy', None)
+
+        if not proxy_proxy:
+            # proxy optionally unset
+            return my_subcfg
 
         ## default proxy values
         proxy_proxy.setdefault('https', proxy_proxy['http'])
