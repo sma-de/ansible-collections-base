@@ -1,0 +1,27 @@
+---
+
+## expand_vardirs_args:
+##   extra_dirs: ## optional, empty on default
+##   role_paths: bool  ## optional, if active checks all parent roles for var dirs, defaults to true
+
+  - debug:
+      msg: "ansible_play_role_names: {{ ansible_play_role_names }}"
+
+  - debug:
+      msg: "ansible_role_names: {{ ansible_role_names }}"
+
+  - debug:
+      msg: "parent roles: {{ ansible_parent_role_paths }}"
+
+  - smabot.base.normalize_expand_vardirs_args:
+    register: _tmp_normres
+    delegate_to: localhost
+
+  - set_fact:
+      expand_vardirs_args_normed: "{{ _tmp_normres.normalized }}"
+
+  - include_tasks: handle_vardir.yml
+    loop: "{{ expand_vardirs_args_normed._dirlist }}"
+    loop_control:
+      loop_var: _iter_vardirs
+

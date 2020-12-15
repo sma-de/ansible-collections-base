@@ -16,6 +16,7 @@ import collections
 import copy
 import re
 import traceback
+import uuid
 
 from ansible.module_utils.basic import missing_required_lib
 from ansible.errors import AnsibleError, AnsibleInternalError, AnsibleOptionsError
@@ -178,6 +179,35 @@ class BaseAction(ActionBase, AnsSpaceAndArgsPlugin):
             )
 
         return res
+
+
+    def merge_vars(self, invars=None, vardict=None, vardict_pos=0):
+        from ansible_collections.smabot.base.plugins.action import merge_vars
+
+        ma = {
+          'invars': invars or [],
+          'result_var': merge_vars.MAGIG_KEY_TOPLVL,
+          'update_facts': False,
+        }
+
+        ans_vspace = self._ansible_varspace
+
+        ##
+        ## we optionally support here to merge a dict object 
+        ## together with defined ansvars, as merge action 
+        ## itself always operates on ansvars only we achieve 
+        ## this by making a "in-memory" tmp ansvar for given 
+        ## vardict
+        ##
+        if vardict:
+            ## we uuid's here as ansvar name to avoid clashes
+            tmp = str(uuid.uuid4())
+            ma['invars'].insert(vardict_pos, tmp)
+            ans_vspace[tmp] = vardict
+
+        return self.run_other_action_plugin(merge_vars.ActionModule, 
+          ans_varspace=ans_vspace, plugin_args=ma
+        )
 
 
     @abc.abstractmethod

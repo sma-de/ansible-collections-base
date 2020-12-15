@@ -13,7 +13,6 @@ __metaclass__ = type
 
 import abc
 import collections
-import uuid
 
 from ansible.errors import AnsibleOptionsError##, AnsibleError, AnsibleModuleError, AnsibleAssertionError, AnsibleParserError
 ####from ansible.module_utils._text import to_native
@@ -24,7 +23,7 @@ from ansible.utils.display import Display
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import merge_dicts, get_subdict, get_subdicts, set_subdict, get_partdict
 from ansible_collections.smabot.base.plugins.module_utils.plugins.action_base import BaseAction##, MAGIC_ARGSPECKEY_META
 from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert
-from ansible_collections.smabot.base.plugins.action import merge_vars
+##from ansible_collections.smabot.base.plugins.action import merge_vars
 
 
 display = Display()
@@ -305,6 +304,10 @@ class ConfigNormalizerBase(BaseAction):
         return True
 
     @property
+    def allow_empty(self):
+        return False
+
+    @property
     def merge_args(self):
         return {
           'invars': [{ 
@@ -355,27 +358,8 @@ class ConfigNormalizerBase(BaseAction):
                     iv = { 'name': iv, 'optional': True }
 
                 tmp.append(iv)
-                
-            ma['invars'] = tmp
 
-            ma['result_var'] = merge_vars.MAGIG_KEY_TOPLVL
-            ma['update_facts'] = False
-
-            ans_vspace = None
-
-            if cfg:
-                ## caller explicitly provided a cfg as param, use 
-                ##   it instead of getting the config from specified 
-                ##   cfgvars, as var merging always operates on ansvars 
-                ##   not directly on values, we will create a tmp ansvar 
-                ##   for our cfg, use uuid as name to avoid clashes
-                tmp = str(uuid.uuid4())
-                ma['invars'][0] = tmp
-                ans_vspace[tmp] = cfg
-
-            cfg = self.run_other_action_plugin(merge_vars.ActionModule, 
-              ans_varspace=ans_vspace, plugin_args=ma
-            )
+            cfg = self.merge_vars(invars=tmp, vardict=cfg)
 
         return cfg['merged_var']
 
@@ -394,7 +378,10 @@ class ConfigNormalizerBase(BaseAction):
         if not cfg:
             ## no merging and no explicit cfg param, obtain 
             ##   cfg from defined cfgvar
-            cfg = self.get_ansible_var(cfgvar)
+            if self.allow_empty:
+                cfg = self.get_ansible_var(cfgvar, default={})
+            else:
+                cfg = self.get_ansible_var(cfgvar)
 
         ## do domain specific normalization
         ansible_assert(self.normalizer, 
