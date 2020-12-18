@@ -55,7 +55,7 @@
           _tmp_merge_resvar: "{{ _tmp_merge_resvar.name }}"
         when: _tmp_merge_resvar is dict
 
-    when: _tmp_merge_resvar == None
+    when: not _tmp_merge_resvar
 
 
     ##
