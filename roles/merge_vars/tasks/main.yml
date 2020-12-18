@@ -116,7 +116,7 @@
 ##   while the classical set_fact works fine
 ##  - ansible.builtin.set_fact:
   - set_fact:
-      "{{ merge_vars_args.result_var }}": "{{ _tmp_merge_res_.merged_var._tmp_merge_res_inner_ }}"
+      "{{ _tmp_merge_resvar }}": "{{ _tmp_merge_res_.merged_var._tmp_merge_res_inner_ }}"
     when: _tmp_merge_resvar != '___toplvl____'
 
   - set_fact:

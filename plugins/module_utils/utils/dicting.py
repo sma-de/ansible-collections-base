@@ -188,7 +188,6 @@ def setdefault_none(d, key, defval=None, defval_fn=None):
       if v is None:
           if defval_fn:
               defval = defval_fn(defval)
-
           v = defval
 
       d[key] = v
