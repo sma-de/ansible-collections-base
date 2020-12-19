@@ -13,13 +13,18 @@ __metaclass__ = type
 
 import collections
 import copy
+import re
 
 from ansible.errors import AnsibleError
+from ansible.module_utils.six import string_types
 
 from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert
 
 
 SUBDICT_METAKEY_ANY = '<<<|||--MATCHALL--|||>>>'
+
+SELFREF_START = '{:'
+SELFREF_END = ':}'
 
 
 ## TODO: support other merge strats, make them settable by caller??
@@ -55,7 +60,46 @@ def merge_dicts(da, db):
 ##
 ## note: for some unfortunate reason inheritance breaks ansible templating, so we do it here ourselves
 ##
-def template_recursive(mapping, templater):
+def template_recursive(mapping, templater, topmap=None):
+    def handle_selfref(v, topmap):
+        if not isinstance(v, string_types):
+            return v
+
+        matches = []
+
+        for m in re.finditer(SELFREF_START + '\s*(\S*)\s*' + SELFREF_END, v):
+            selfref_key = m.group(1)
+
+            ansible_assert(selfref_key, 
+               "bad self reference inside string '{}': cannot"\
+               " be empty".format(v)
+            )
+
+            selfref_key = selfref_key.split('.')
+            tmp = get_subdict(topmap, selfref_key)
+
+            if isinstance(tmp, collections.abc.Mapping) \
+              or isinstance(tmp, list):
+                ansible_assert(not matches, 
+                   "bad self reference inside string '{}': multiple self"\
+                   " references inside a single value are only supported"\
+                   " atm for simple types, not complex collection types"\
+                   " like maps and lists".format(v)
+                )
+
+            matches.append({ 'key': m.group(0), 'replacement': tmp})
+
+        if len(matches) == 1:
+            return matches[0]['replacement']
+
+        for m in matches:
+            v = v.sub(m['key'], str(m['replacement']), v)
+
+        return v
+
+    if topmap is None:
+        topmap = mapping
+
     ## TODO: also template keys like set_fact do
     is_map = isinstance(mapping, collections.abc.Mapping)
 
@@ -70,11 +114,12 @@ def template_recursive(mapping, templater):
             k = v
             v = mapping[k]
 
+        v = handle_selfref(v, topmap)
         v = templater.template(v)
 
         if isinstance(v, collections.abc.Mapping) \
         or isinstance(v, list):
-            v = template_recursive(v, templater)
+            v = template_recursive(v, templater, topmap=topmap)
 
         if is_map:
             nm[k] = v

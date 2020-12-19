@@ -134,7 +134,7 @@ class NormalizerBase(abc.ABC):
         sub_normalizers=None, sub_normalizers_lazy=None
     ):
         self.pluginref = pluginref
-        self.sub_normalizers = sub_normalizers
+        self.sub_normalizers = sub_normalizers or []
         self.sub_normalizers_lazy = sub_normalizers_lazy
         self.default_setters = default_setters or {}
 
@@ -189,7 +189,7 @@ class NormalizerBase(abc.ABC):
 
 
     def _handle_sub_normalizers(self, cfg, my_subcfg, cfgpath_abs):
-        subnorms = self.sub_normalizers or []
+        subnorms = self.sub_normalizers
         subnorms_lazy = self.sub_normalizers_lazy
 
         if subnorms_lazy:
