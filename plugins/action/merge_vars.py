@@ -125,6 +125,8 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
         # initially deep merge defaults into mapping
         defaults = mapping.get(defaultkey, None)
 
+        display.vvv("merge: defaulting: root defaults {}".format(defaults))
+
         if not defaults:
             return mapping  ## noop
 
@@ -349,6 +351,7 @@ class ActionModule(BaseAction):
                 merged = merge_dicts(dtop, merged)
 
         ## optionally handle defaulting
+        display.vvv("merge: defaulting: {}".format(defaulting))
         if defaulting:
             recursive_defaulting(merged, defaulting)
 
