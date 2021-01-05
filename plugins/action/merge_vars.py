@@ -128,7 +128,7 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
         if not defaults:
             return mapping  ## noop
 
-        merge_dicts(mapping, defaults)
+        merge_dicts(mapping, copy.deepcopy(defaults))
         ignore_subkeys = [defaultkey]
 
     merge_all = None

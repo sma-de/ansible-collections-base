@@ -183,7 +183,7 @@ def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
             tmp = {}
             d[k] = tmp
         else:
-            raise AnsibleError(
+            raise KeyError(
                "invalid keychain {}, could not find"
                " subkey '{}'".format(keychain, k)
             )
