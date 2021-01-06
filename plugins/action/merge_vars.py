@@ -144,7 +144,7 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
         merge_all = mapping.pop(MAGIG_KEY_DEFAULTALL, None)
 
         for k in list(mapping.keys()):
-            tmp = re.match(r'\{\?\s*(.*)\s*\?\}', k)
+            tmp = re.match(r'\{\?\s*(\S.*\S)\s*\?\}', k)
 
             if tmp:
                 regex_mergers[tmp.group(1)] = mapping.pop(k)
@@ -174,14 +174,14 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
             ## more specific matches have precedence over generic '*'
             for (rm, rv) in iteritems(regex_mergers):
                 display.vvv(
-                     "merge: defaulting: test regex merger '{}'"\
-                   + " versus key '{}'".format(rm, k)
+                   "merge: defaulting: test regex merger '{}'"\
+                   " versus key '{}'".format(rm, k)
                 )
 
                 if re.match(rm, k):
                     display.vv(
-                        "merge: defaulting: apply regex merger '{}'"\
-                      + " to key '{}'".format(rm, k)
+                       "merge: defaulting: apply regex merger '{}'"\
+                       " to key '{}'".format(rm, k)
                     )
 
                     merge_dicts(v, rv)
