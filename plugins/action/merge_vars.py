@@ -173,6 +173,11 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
 
             ## more specific matches have precedence over generic '*'
             for (rm, rv) in iteritems(regex_mergers):
+                display.vvv(
+                     "merge: defaulting: test regex merger '{}'"\
+                   + " versus key '{}'".format(rm, k)
+                )
+
                 if re.match(rm, k):
                     display.vv(
                         "merge: defaulting: apply regex merger '{}'"\
