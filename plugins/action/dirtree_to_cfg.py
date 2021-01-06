@@ -82,7 +82,7 @@ class ActionModule(BaseAction):
 
         dircfg = {}
 
-        # build dirfg from dir tree
+        # build dircfg from dir tree
         for sp in dirtree:
             spp = sp['path']
             sps = sp['state']

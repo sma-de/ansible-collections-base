@@ -5,6 +5,7 @@ __metaclass__ = type
 
 import collections
 import copy
+import re
 
 from ansible.errors import AnsibleOptionsError##, AnsibleError, AnsibleModuleError, AnsibleAssertionError, AnsibleParserError
 ##from ansible.module_utils._text import to_native
@@ -134,6 +135,7 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
         ignore_subkeys = [defaultkey]
 
     merge_all = None
+    regex_mergers = {}
 
     parent_ismap = False
 
@@ -141,7 +143,19 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
         parent_ismap = True
         merge_all = mapping.pop(MAGIG_KEY_DEFAULTALL, None)
 
+        for k in list(mapping.keys()):
+            tmp = re.match(r'\{\?\s*(.*)\s*\?\}', k)
+
+            if tmp:
+                regex_mergers[tmp.group(1)] = mapping.pop(k)
+
+        display.vvv(
+            "merge: defaulting: found following regex" \
+          + " mergers: {}".format(regex_mergers)
+        )
+
     for v in mapping:
+        k = v
 
         if v in ignore_subkeys:
             continue
@@ -156,6 +170,17 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
         if isinstance(v, collections.abc.Mapping):
             if merge_all:
                 merge_dicts(v, merge_all)
+
+            ## more specific matches have precedence over generic '*'
+            for (rm, rv) in iteritems(regex_mergers):
+                if re.match(rm, k):
+                    display.vv(
+                        "merge: defaulting: apply regex merger '{}'"\
+                      + " to key '{}'".format(rm, k)
+                    )
+
+                    merge_dicts(v, rv)
+
             ismap = True
 
         if ismap or isinstance(v, list):
