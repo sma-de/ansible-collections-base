@@ -41,9 +41,14 @@ class BaseLookup(LookupBase, AnsSpaceAndArgsPlugin):
            "[LOOKUP_BASE] :: run other plugin, kwargs: {}".format(kwargs)
         )
 
-        return plugin_class(
-            loader=self._loader, templar=self._templar
-        ).run(terms, variables=self._ansible_varspace, **kwargs)
+        def tmp = plugin_class(
+          loader=self._loader, templar=self._templar
+        )
+
+        ## note: this must be set for plugin default method set_options 
+        ##   to work, no idea how ansible sets this normally
+        tmp._load_name = plugin_class.__module__
+        return tmp.run(terms, variables=self._ansible_varspace, **kwargs)
 
 
     @abc.abstractmethod
