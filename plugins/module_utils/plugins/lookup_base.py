@@ -41,7 +41,7 @@ class BaseLookup(LookupBase, AnsSpaceAndArgsPlugin):
            "[LOOKUP_BASE] :: run other plugin, kwargs: {}".format(kwargs)
         )
 
-        def tmp = plugin_class(
+        tmp = plugin_class(
           loader=self._loader, templar=self._templar
         )
 
