@@ -147,6 +147,12 @@ class NormalizerBase(abc.ABC):
     def simpleform_key(self):
         return None
 
+    @property
+    def allow_unsetting(self):
+        ## if this is set to true, it means that explicit unsetting of 
+        ## this subcfg branch by a user is allowed
+        return False
+
     def _add_defaultsetter(self, kwargs, defkey, defval):
         defsets = kwargs.setdefault('default_setters', {})
         defsets[defkey] = defval
@@ -224,6 +230,9 @@ class NormalizerBase(abc.ABC):
         sk = self.simpleform_key
 
         if not sk:
+            if self.allow_unsetting and my_subcfg is None:
+                return None
+
             raise AnsibleOptionsError(
                "As no simpleform_key is specified sub-config for"\
                " keypath '{}' must be a dictionary".format(
@@ -257,6 +266,11 @@ class NormalizerBase(abc.ABC):
                 sp_abs += subpath
 
             subcfg = self._simple_to_dict(global_cfg, subcfg, sp_abs)
+
+            if subcfg is None:
+                # this means that explicit unsetting of subcfg branch 
+                # is supported and active, so skip it
+                continue
 
             if subpath:
                 set_subdict(config, subpath, subcfg)
