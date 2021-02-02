@@ -38,6 +38,8 @@ class DefaultSetterBase(abc.ABC):
     def __call__(self, *args, **kwargs):
         tmp = self._get_defval(*args, **kwargs)
 
+        display.vvv("setting default value: {}".format(tmp))
+
         normfn = self.normalizer_fn
 
         if normfn:
@@ -171,6 +173,8 @@ class NormalizerBase(abc.ABC):
             return my_subcfg
 
         for (k, v) in iteritems(defsets):
+
+            display.vvv("handle default setter for '{}'".format(k))
 
             ## as the name implies default_setters are only active 
             ## when key is not set explicitly

@@ -22,8 +22,8 @@ display = Display()
 
 
 MAGIG_KEY_TOPLVL = '___toplvl____'
-MAGIG_KEY_DEFAULTALL = '*'
 
+MAGIG_KEYS_DEFAULTALL = ['*', '___defaultall___']
 
 
 def _get_inherit_parent(key, vars_access, templater=None, **kwargs):
@@ -141,7 +141,14 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
 
     if isinstance(mapping, collections.abc.Mapping):
         parent_ismap = True
-        merge_all = mapping.pop(MAGIG_KEY_DEFAULTALL, None)
+
+        merge_all = []
+
+        for mdk in MAGIG_KEYS_DEFAULTALL:
+            tmp = mapping.pop(mdk, None)
+
+            if tmp:
+                merge_all.append(tmp)
 
         for k in list(mapping.keys()):
             tmp = re.match(r'\{\?\s*(\S.*\S)\s*\?\}', k)
@@ -169,7 +176,12 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
         ## TODO: also merge to sublists???
         if isinstance(v, collections.abc.Mapping):
             if merge_all:
-                merge_dicts(v, merge_all)
+                tmp = {}
+
+                for ma in merge_all:
+                    merge_dicts(tmp, ma)
+
+                merge_dicts(v, tmp)
 
             ## more specific matches have precedence over generic '*'
             for (rm, rv) in iteritems(regex_mergers):
