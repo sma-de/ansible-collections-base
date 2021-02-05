@@ -84,7 +84,15 @@ def check_paramtype(param, value, typespec, errmsg):
 
     type_match = False
 
+    display.vvv(
+      "[PLUGIN] :: handle args, do type check: {}".format(typespec)
+    )
+
     for xt in typespec:
+        display.vvv(
+          "[PLUGIN] :: handle args, type test: {}".format(xt)
+        )
+
         sub_types = None
 
         if isinstance(xt, list):
@@ -105,6 +113,10 @@ def check_paramtype(param, value, typespec, errmsg):
 
     if isinstance(value, list):
         ansible_assert(sub_types, 'bad typespec')
+
+        display.vvv(
+          "[PLUGIN] :: handle args, do subtype check: {}".format(sub_types)
+        )
 
         for vx in value:
             check_paramtype(param, vx, sub_types, errmsg)
@@ -145,13 +157,27 @@ class ArgsPlugin():
         args_meta = argspec.pop(MAGIC_ARGSPECKEY_META, {})
 
         for (k, v) in iteritems(argspec):
+            display.vv(
+              "[PLUGIN] :: handle args, do param '{}'".format(k)
+            )
+
             ## first normalize argspec
 
             # convert convenience short forms to norm form
             if isinstance(v, collections.abc.Mapping):
+                display.vvv(
+                   "[PLUGIN] :: handle args, argspec is dict,"\
+                   " nothing to normalize"
+                )
+
                 pass  # noop
             elif isinstance(v, tuple):
                 tmp = {}
+
+                display.vvv(
+                   "[PLUGIN] :: handle args, argspec is short form,"\
+                   " normalizing ..."
+                )
 
                 for i in range(0, len(v)):
                     vx = v[i]
@@ -191,6 +217,12 @@ class ArgsPlugin():
             # get param
             key_hits = []
             aliases = v.get('aliases', [])
+
+            display.vvv(
+              "[PLUGIN] :: handle args, get set val / handle"\
+              " aliasing: {}".format(aliases)
+            )
+
             for x in [k] + aliases:
                 ansible_assert(x not in args_found, 
                   "Bad argspec for param '{}': duplicate alias"
@@ -209,11 +241,22 @@ class ArgsPlugin():
                 )
 
             if len(key_hits) == 0: 
+                display.vv("[PLUGIN] :: handle args, do defaulting")
+
                 # param unset, do defaulting
                 pval = default_param_value(
                    k, vdef, self._ansible_varspace, 
                    getattr(self, '_templar', None)
                 )
+
+            display.vv(
+              "[PLUGIN] :: handle args, final pvalue: |{}|".format(pval)
+            )
+
+            display.vv(
+              "[PLUGIN] :: handle args, check param"\
+              " type: {}".format(v['type'])
+            )
 
             ## at this point param is either set explicitly or by 
             ## defaulting mechanism, proceed with value tests
@@ -223,6 +266,10 @@ class ArgsPlugin():
             choice = v.get('choice', None)
 
             if choice:
+                display.vvv(
+                  "[PLUGIN] :: handle args, handle choice: {}".format(choice)
+                )
+
                 ansible_assert(isinstance(choice, list), 
                    "bad argspec[{}]: choice must be list,"\
                    " but was '{}': {}".format(k, type(choice), choice)
@@ -245,11 +292,15 @@ class ArgsPlugin():
             subspec = v.get('subspec', None)
 
             if isinstance(pval, collections.abc.Mapping) and subspec:
+                display.vvv(
+                  "[PLUGIN] :: handle args, do subspec: {}".format(subspec)
+                )
+
                 self._handle_taskargs(subspec, pval, pval)
 
         if args_set:
             raise AnsibleOptionsError(
-              "Unsupported parameters given: {}".format(list(args_set.keys))
+              "Unsupported parameters given: {}".format(list(args_set.keys()))
             )
 
         ## check mutual exclusions:
