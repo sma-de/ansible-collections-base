@@ -62,7 +62,7 @@ class SubdictFilter(FilterBase):
 
     @property
     def argspec(self):
-        tmp = super(KvListFilter, self).argspec
+        tmp = super(SubdictFilter, self).argspec
 
         tmp.update({
           'keys_keep': ([[str]], []),
