@@ -29,6 +29,13 @@ from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ans
 display = Display()
 
 
+def key_validator_trueish(val):
+    if val:
+        return None
+    
+    return "Value cannot be none / empty"
+
+
 class DefaultSetterBase(abc.ABC):
 
     def __init__(self, normalizer_fn=None, default_on_none=True):
@@ -237,6 +244,30 @@ class NormalizerBase(abc.ABC):
 
         my_subcfg = { sk: my_subcfg }
         return my_subcfg
+
+
+    def _get_mandatory_subkey(self, mycfg, key, keychain, validate_fn=None):
+        if key not in mycfg:
+            raise AnsibleOptionsError(
+               "{}: Mandatory subkey '{}' must be set".format(
+                  '.'.join(keychain), key
+               )
+            )
+
+        res = mycfg[key]
+
+        if validate_fn:
+            errmsg = validate_fn(res)
+
+            if errmsg:
+                raise AnsibleOptionsError(
+                  "{}: Mandatory subkey '{}' value '{}' failed its"\
+                  " validation. Reason: {}".format(
+                     '.'.join(keychain), key, res, errmsg
+                  )
+                )
+
+        return res
 
 
     def normalize_config(self, config, global_cfg=None, cfgpath_abs=None):
