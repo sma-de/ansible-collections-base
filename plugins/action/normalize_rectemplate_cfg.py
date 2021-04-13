@@ -4,6 +4,7 @@ __metaclass__ = type
 
 
 import abc
+import pathlib
 import os
 
 from ansible.errors import AnsibleOptionsError
@@ -102,7 +103,7 @@ class PathsNormalizer(NormalizerBase):
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
           CopyItemNormalizer(pluginref, 
-             srcpath_parent='templates', filterable=True, moddable=True
+             filterable=True, moddable=True
           ),
         ]
 
@@ -116,7 +117,7 @@ class PathsNormalizer(NormalizerBase):
 class CopyItemNormalizer(NormalizerNamed):
 
     def __init__(self, pluginref, *args, 
-        srcpath_parent=None, filterable=False, moddable=None, **kwargs
+        filterable=False, moddable=None, **kwargs
     ):
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
@@ -124,7 +125,6 @@ class CopyItemNormalizer(NormalizerNamed):
         ]
 
         super(CopyItemNormalizer, self).__init__(pluginref, *args, **kwargs)
-        self.srcpath_parent = srcpath_parent
         self.filterable = filterable
         self.moddable = moddable
 
@@ -141,26 +141,21 @@ class CopyItemNormalizer(NormalizerNamed):
         return 'dest'
 
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
-        src = my_subcfg['src']
-        my_subcfg['src_rel'] = src
+        src = pathlib.PurePosixPath(my_subcfg['src'])
 
-        srcpath = [cfg['source_root']]
+        ## note: this is actually only relative when source_root is 
+        ##   set and src is given as relative, if src is given as 
+        ##   abspath which is allowed, this is actually not recursive
+        my_subcfg['src_rel'] = str(src)
+        my_subcfg['relative'] = False
 
-        srcppa = self.srcpath_parent
+        if not src.is_absolute():
+            my_subcfg['relative'] = True
 
-        if not srcppa:
-            srcppa = cfgpath_abs[-2]
+            ## note: for relative paths, source root must be set
+            src = pathlib.PurePosixPath(cfg['source_root']) / src
 
-        srcpath.append(srcppa)
-
-        tmp = cfg.get('source_root_suffix', None)
-
-        if tmp:
-            srcpath.append(tmp)
-
-        srcpath.append(src)
-
-        my_subcfg['src'] = os.path.join(*srcpath) 
+        my_subcfg['src'] = str(src)
 
         if self.filterable:
             deffilter = cfg.get('filter_criteria', {})
