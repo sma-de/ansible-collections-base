@@ -13,6 +13,12 @@
   - set_fact:
       _template_file_pathpfx: ''
       _template_file_pathsfx: false
+      _template_path_sep: '/'
+
+  - set_fact:
+      _template_path_sep: \
+    when: ansible_os_family == 'Windows'
+
 
     ##
     ## if we rec template a dir and if given src path does not end with 
@@ -22,11 +28,19 @@
   - block:
 
       - set_fact:
-          _template_file_pathpfx: "{{ _inpath_iter.value.dest }}/"
+          _template_file_pathpfx: "{{ _inpath_iter.value.dest }}"
+        when: _inpath_iter.value.dest[-1] == _template_path_sep
 
       - set_fact:
           _template_file_pathpfx: >-
-            {{ '/'.join([_template_file_pathpfx, _inpath_iter.value.src_rel]) }}/
+             {{ _inpath_iter.value.dest ~ _template_path_sep }}
+        when: _inpath_iter.value.dest[-1] != _template_path_sep
+
+      - set_fact:
+          _template_file_pathpfx: >-
+            {{ _template_path_sep.join([_template_file_pathpfx]
+               + _inpath_iter.value.src_rel.split('/')
+               ) ~ _template_path_sep }}
         when: _inpath_iter.value.src_rel[-1] != '/'
 
       - set_fact:
@@ -52,17 +66,24 @@
         ##
       - set_fact:
           _template_file_pathsfx: "{{ _inpath_iter.value.dest }}"
-        when: _inpath_iter.value.dest[-1] != '/'
+        when: _inpath_iter.value.dest[-1] != _template_path_sep
 
         ##
         ## if given dest path is a dir (simply decided syntactically based 
         ## on if it ends with a slash or not), final dest path is src base 
         ## name copied into dest dir
         ##
-      - set_fact:
-          _template_file_pathpfx: "{{ _inpath_iter.value.dest }}"
-          _template_file_pathsfx: "{{ _inpath_iter.value.src_rel | basename }}"
-        when: _inpath_iter.value.dest[-1] == '/'
+      - block:
+
+          - set_fact:
+              _template_file_pathpfx: "{{ _inpath_iter.value.dest }}"
+              _template_file_pathsfx: "{{ _inpath_iter.value.src_rel | basename }}"
+
+          - set_fact:
+              _template_file_pathsfx: "{{ _inpath_iter.value.src_rel | win_basename }}"
+            when: ansible_os_family == 'Windows'
+
+        when: _inpath_iter.value.dest[-1] == _template_path_sep
 
 
       - set_fact:

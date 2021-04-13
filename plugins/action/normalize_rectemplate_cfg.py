@@ -141,13 +141,20 @@ class CopyItemNormalizer(NormalizerNamed):
         return 'dest'
 
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
-        src = pathlib.PurePosixPath(my_subcfg['src'])
+        src = my_subcfg['src']
+
+        src_suffix = ''
+
+        if src[-1] == '/':
+            src_suffix = '/'
 
         ## note: this is actually only relative when source_root is 
         ##   set and src is given as relative, if src is given as 
         ##   abspath which is allowed, this is actually not recursive
-        my_subcfg['src_rel'] = str(src)
+        my_subcfg['src_rel'] = src
         my_subcfg['relative'] = False
+
+        src = pathlib.PurePosixPath(src)
 
         if not src.is_absolute():
             my_subcfg['relative'] = True
@@ -155,7 +162,7 @@ class CopyItemNormalizer(NormalizerNamed):
             ## note: for relative paths, source root must be set
             src = pathlib.PurePosixPath(cfg['source_root']) / src
 
-        my_subcfg['src'] = str(src)
+        my_subcfg['src'] = str(src) + src_suffix
 
         if self.filterable:
             deffilter = cfg.get('filter_criteria', {})
@@ -190,6 +197,12 @@ class CopyItemNormalizer(NormalizerNamed):
 class CopyItemCopyApiNormalizer(NormalizerBase):
 
     def __init__(self, *args, **kwargs):
+        ## note: force is needed here to replace files 
+        ##   when they have changed
+        self._add_defaultsetter(kwargs, 
+           'force', DefaultSetterConstant(True)
+        )
+
         super(CopyItemCopyApiNormalizer, self).__init__(*args, **kwargs)
 
     @property
