@@ -70,7 +70,9 @@ class ConfigNormerWebservice(NormalizerBase):
                 setdefault_none(v, 'host', mc['host'])
                 v['url'] = connection_as_url(v)
 
-        return my_subcfg
+        return super(
+          ConfigNormerWebservice, self
+        )._handle_specifics_postsub(cfg, my_subcfg, cfgpath_abs)
 
 
 class ConfigNormerGitServer(ConfigNormerWebservice):
@@ -119,7 +121,10 @@ class ConfigNormerConnection(NormalizerBase):
             host = cfgpath_abs[-2].replace('_', '.')
             my_subcfg['host'] = host
 
-        return my_subcfg
+        return super(
+          ConfigNormerConnection, self
+        )._handle_specifics_presub(cfg, my_subcfg, cfgpath_abs)
+
 
 
 class ConfigNormerConnLdap(ConfigNormerConnection):
