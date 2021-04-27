@@ -114,8 +114,10 @@ def template_recursive(mapping, templater, topmap=None):
             k = v
             v = mapping[k]
 
-        v = handle_selfref(v, topmap)
-        v = templater.template(v)
+        if not isinstance(v, collections.abc.Mapping) \
+        and not isinstance(v, list):
+            v = handle_selfref(v, topmap)
+            v = templater.template(v)
 
         if isinstance(v, collections.abc.Mapping) \
         or isinstance(v, list):
