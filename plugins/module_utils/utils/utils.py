@@ -21,11 +21,15 @@ def ansible_assert(condition, error_msg):
 
 
 def detemplate(val, templater):
+    from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import template_recursive
+
+    if isinstance(val, (collections.abc.Mapping, list)):
+        return template_recursive(val, templater)
+
     val = templater.template(val)
 
     if isinstance(val, (collections.abc.Mapping, list)):
-        import ansible_collections.smabot.base.plugins.module_utils.utils.dicting
-        return ansible_collections.smabot.base.plugins.module_utils.utils.dicting.template_recursive(val, templater)
+        return template_recursive(val, templater)
 
     return val
 
