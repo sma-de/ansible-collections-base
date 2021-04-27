@@ -147,5 +147,5 @@ class ConfigNormerConnDocker(ConfigNormerConnection):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('default_port', 5000)
-        super(ConfigNormerConnSSH, self).__init__(*args, **kwargs)
+        super(ConfigNormerConnDocker, self).__init__(*args, **kwargs)
 
