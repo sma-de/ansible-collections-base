@@ -13,6 +13,11 @@ __metaclass__ = type
 import collections
 
 from ansible.errors import AnsibleAssertionError
+from ansible.module_utils.six import string_types
+
+
+##LAZYTEMPLATE_START = '{!'
+##LAZYTEMPLATE_END = '!}'
 
 
 def ansible_assert(condition, error_msg):
@@ -20,8 +25,26 @@ def ansible_assert(condition, error_msg):
         raise AnsibleAssertionError(error_msg)
 
 
+##def handle_lazy_templates(val, templater):
+##    if not isinstance(val, string_types):
+##        return val
+##
+##    if not val.startswith(LAZYTEMPLATE_START):
+##        return val
+##
+##    if not not val.endswith(LAZYTEMPLATE_END):
+##        return val
+##
+##    ## if we find a lazy template, make it now a real 
+##    ## template, and template it
+##    val = '{{' + val[len(LAZYTEMPLATE_START):len(LAZYTEMPLATE_END)] + '}}'
+##    return templater.template(val)
+
+
 def detemplate(val, templater):
     from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import template_recursive
+
+    ##val = handle_lazy_templates(val, templater)
 
     if isinstance(val, (collections.abc.Mapping, list)):
         return template_recursive(val, templater)
