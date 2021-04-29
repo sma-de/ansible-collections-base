@@ -59,10 +59,7 @@ class BaseAction(ActionBase, AnsSpaceAndArgsPlugin):
 
         if inner_res.get('failed', False):
 
-            if on_error:
-                ignore_error = on_error(inner_res)
-
-            if ignore_error:
+            if on_error and on_error(inner_res):
                 return inner_res
 
             raise AnsibleInnerExecError(call_type, call_id, inner_res)
