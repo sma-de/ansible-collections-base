@@ -196,14 +196,38 @@ class CopyItemNormalizer(NormalizerNamed):
 ##
 class CopyItemCopyApiNormalizer(NormalizerBase):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, pluginref, *args, **kwargs):
         ## note: force is needed here to replace files 
         ##   when they have changed
         self._add_defaultsetter(kwargs, 
            'force', DefaultSetterConstant(True)
         )
 
-        super(CopyItemCopyApiNormalizer, self).__init__(*args, **kwargs)
+        ##
+        ## note: on default (if mode is unset) ansible will create 
+        ##   files with the default file mode of the remot system, 
+        ##   but as we always have a source file here I would prefer, 
+        ##   that on default (if mode is unset) the mode of the source 
+        ##   file is kept, this can be simply done by using the 
+        ##   keyword 'preserve'
+        ##
+        ## TODO: is preserve also supported by template module or only by copy module (is it not mentioned in the docu of template)
+        ##
+        self._add_defaultsetter(kwargs, 'mode',
+           DefaultSetterConstant(
+              pluginref.get_ansible_var(
+                # note: as this is somewhat "heavy" to change 
+                #   the default behaviour of filemode we 
+                #   optionally allow to generally change the 
+                #   default by a global default ansvar
+                'ANSIBLE_DEFAULT_FILEMODE', default='preserve'
+              )
+           )
+        )
+
+        super(CopyItemCopyApiNormalizer, self).__init__(
+           pluginref, *args, **kwargs
+        )
 
     @property
     def config_path(self):
@@ -211,6 +235,12 @@ class CopyItemCopyApiNormalizer(NormalizerBase):
 
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
         parent_cfg = self.get_parentcfg(cfg, cfgpath_abs)
+
+        # note: as we map None to "use our default" we use a 
+        #   special value here to say use ansible builtin default
+        mode = my_subcfg.get('mode', None)
+        if mode == 'ANSIBLE_DEFAULT':
+            mode = None
 
         my_subcfg.update(
           self.copy_from_parent(cfg, cfgpath_abs, ['src', 'dest'])
