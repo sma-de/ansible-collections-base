@@ -12,7 +12,7 @@ from ansible.module_utils.six import iteritems, string_types
 
 from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normalizing.base import ConfigNormalizerBase, NormalizerBase, NormalizerNamed, DefaultSetterConstant
 from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normalizing.proxy import ConfigNormerProxy
-from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import get_subdict, SUBDICT_METAKEY_ANY
+from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import get_subdict, SUBDICT_METAKEY_ANY, setdefault_none
 
 from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert
 
@@ -196,12 +196,23 @@ class CopyItemNormalizer(NormalizerNamed):
 ##
 class CopyItemCopyApiNormalizer(NormalizerBase):
 
-    def __init__(self, pluginref, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         ## note: force is needed here to replace files 
         ##   when they have changed
         self._add_defaultsetter(kwargs, 
            'force', DefaultSetterConstant(True)
         )
+
+        super(CopyItemCopyApiNormalizer, self).__init__(
+           *args, **kwargs
+        )
+
+    @property
+    def config_path(self):
+        return ['copy_api']
+
+    def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
+        parent_cfg = self.get_parentcfg(cfg, cfgpath_abs)
 
         ##
         ## note: on default (if mode is unset) ansible will create 
@@ -213,32 +224,18 @@ class CopyItemCopyApiNormalizer(NormalizerBase):
         ##
         ## TODO: is preserve also supported by template module or only by copy module (is it not mentioned in the docu of template)
         ##
-        self._add_defaultsetter(kwargs, 'mode',
-           DefaultSetterConstant(
-              pluginref.get_ansible_var(
-                # note: as this is somewhat "heavy" to change 
-                #   the default behaviour of filemode we 
-                #   optionally allow to generally change the 
-                #   default by a global default ansvar
-                'ANSIBLE_DEFAULT_FILEMODE', default='preserve'
-              )
-           )
+        mode = setdefault_none(my_subcfg, 'mode',
+          self.pluginref.get_ansible_var(
+            # note: as this is somewhat "heavy" to change 
+            #   the default behaviour of filemode we 
+            #   optionally allow to generally change the 
+            #   default by a global default ansvar
+            'ANSIBLE_DEFAULT_FILEMODE', default='preserve'
+          )
         )
-
-        super(CopyItemCopyApiNormalizer, self).__init__(
-           pluginref, *args, **kwargs
-        )
-
-    @property
-    def config_path(self):
-        return ['copy_api']
-
-    def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
-        parent_cfg = self.get_parentcfg(cfg, cfgpath_abs)
 
         # note: as we map None to "use our default" we use a 
         #   special value here to say use ansible builtin default
-        mode = my_subcfg.get('mode', None)
         if mode == 'ANSIBLE_DEFAULT':
             mode = None
 
