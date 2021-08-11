@@ -14,7 +14,7 @@ from ansible.plugins.action import include_vars, template
 from ansible_collections.smabot.base.plugins.module_utils.plugins.action_base import BaseAction
 
 from ansible_collections.smabot.base.plugins.action import merge_vars
-from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import get_subdict
+from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import get_subdict, merge_dicts
 
 
 ##display = Display()
@@ -74,7 +74,7 @@ class ActionModule(BaseAction):
                   modargs={'state': 'absent', 'path': tmpfile}
                 )
 
-        cfgdict.update(tmp['ansible_facts'][tmpkey])
+        merge_dicts(cfgdict, tmp['ansible_facts'][tmpkey])
 
 
     def run_specific(self, result):
