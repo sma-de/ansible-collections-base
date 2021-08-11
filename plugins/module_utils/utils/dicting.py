@@ -184,6 +184,8 @@ def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
         elif kwargs.get('default_empty', False):
             tmp = {}
             d[k] = tmp
+        elif kwargs.get('ignore_empty', False):
+            continue
         else:
             raise KeyError(
                "invalid keychain {}, could not find"

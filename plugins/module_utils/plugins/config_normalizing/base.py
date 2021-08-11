@@ -209,11 +209,11 @@ class NormalizerBase(abc.ABC):
 
         if subnorms_lazy:
             for sn in subnorms_lazy:
-                tmp = list(get_subdicts(my_subcfg, sn.NORMER_CONFIG_PATH, 
-                    default_empty=True, allow_nondict_leaves=True
-                ))
+                tmp = get_subdicts(my_subcfg, sn.NORMER_CONFIG_PATH, 
+                   ignore_empty=True, allow_nondict_leaves=True
+                )
 
-                if tmp:
+                if any(map(lambda x: x[0], tmp)):
                     subnorms.append(sn(self.pluginref))
 
         if not subnorms:
