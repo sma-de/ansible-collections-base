@@ -29,6 +29,10 @@ from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ans
 display = Display()
 
 
+SIMPLEKEY_IGNORE_VAL = object()
+
+
+
 def key_validator_trueish(val):
     if val:
         return None
@@ -241,6 +245,13 @@ class NormalizerBase(abc.ABC):
                    '.'.join(cfgpath_abs)
                )
             )
+
+        if sk == SIMPLEKEY_IGNORE_VAL:
+            # one can optionally set the simple key to this magic value 
+            # to say: I don't care about the simple value (it is 
+            # probably simply true or "yes" or similar to just 
+            # activate the subbranch)
+            return {}
 
         my_subcfg = { sk: my_subcfg }
         return my_subcfg
