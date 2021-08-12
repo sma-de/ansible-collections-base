@@ -208,18 +208,36 @@ class NormalizerBase(abc.ABC):
         subnorms_lazy = self.sub_normalizers_lazy
 
         if subnorms_lazy:
-            for sn in subnorms_lazy:
-                tmp = get_subdicts(my_subcfg, sn.NORMER_CONFIG_PATH, 
-                   ignore_empty=True, allow_nondict_leaves=True
-                )
+            display.deprecated("dont use old style sub_normalizers_lazy anymore")
+            subnorms += subnorms_lazy
+            subnorms_lazy.clear()
 
-                if any(map(lambda x: x[0], tmp)):
-                    subnorms.append(sn(self.pluginref))
-
+##            for sn in subnorms_lazy:
+##                tmp = get_subdicts(my_subcfg, sn.NORMER_CONFIG_PATH, 
+##                   ignore_empty=True, allow_nondict_leaves=True
+##                )
+##
+##                if any(map(lambda x: x[0], tmp)):
+##                    subnorms.append(sn(self.pluginref))
+##
         if not subnorms:
             return my_subcfg
 
         for sn in subnorms:
+            if not isinstance(sn, NormalizerBase):
+                # expect on default some normalizer instance, 
+                # or a tuple for a lazy initialized normer
+                normtype, lazy = sn
+
+                tmp = get_subdicts(my_subcfg, normtype.NORMER_CONFIG_PATH, 
+                   ignore_empty=True, allow_nondict_leaves=True
+                )
+
+                if any(map(lambda x: x[0], tmp)):
+                    sn = normtype(self.pluginref)
+                else:
+                    continue
+
             sn(my_subcfg, cfg, cfgpath_abs)
 
         return my_subcfg
