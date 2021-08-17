@@ -148,6 +148,11 @@ def get_subdict(d, keychain, **kwargs):
 
 
 def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
+    ansible_assert(isinstance(d, collections.abc.Mapping), 
+        "invalid input param d for keychain {}, it must be a mapping,"\
+      + " but was of type '{}': {}".format(keychain, type(d), d)
+    )
+
     if not keychain:
         yield (d, kcout)
         return

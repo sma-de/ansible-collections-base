@@ -229,6 +229,8 @@ class NormalizerBase(abc.ABC):
                 # or a tuple for a lazy initialized normer
                 normtype, lazy = sn
 
+                ##print("{}: subcfg => {}".format(self.config_path, my_subcfg))
+
                 tmp = get_subdicts(my_subcfg, normtype.NORMER_CONFIG_PATH, 
                    ignore_empty=True, allow_nondict_leaves=True
                 )
