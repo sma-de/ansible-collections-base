@@ -5,6 +5,7 @@ __metaclass__ = type
 
 import collections
 import copy
+import os
 import re
 
 from ansible.errors import AnsibleOptionsError##, AnsibleError, AnsibleModuleError, AnsibleAssertionError, AnsibleParserError
@@ -88,6 +89,17 @@ def handle_map_inheritance(
     inheritance_keys = inheritance_keys or ['_merge_with']
 
     _inherits_here(mapping, vars_access, inheritance_keys, **kwargs)
+
+    # optionally handle dynamic subprofiles
+    pf_keys = kwargs.get('active_dyn_profiles', None)
+    pf_maps = mapping.get('_dynamic_profiles', None)
+
+    if pf_keys and pf_maps:
+        for k in pf_keys:
+            tmp = pf_maps.get(k, None)
+
+            if tmp:
+                merge_dicts(mapping, tmp)
 
     # check if we need to recurse
     recurse = []
@@ -274,6 +286,11 @@ class ActionModule(BaseAction):
         invars = []
         pos = 0 
 
+        active_dyn_profiles = os.environ.get('SMABOT_BASE_DYNPROFILES', None)
+
+        if active_dyn_profiles:
+            active_dyn_profiles = re.split('\s+', active_dyn_profiles.strip())
+
         for iv in tmp:
 
             ## if inmap value is kust a plain string, assume it 
@@ -322,8 +339,9 @@ class ActionModule(BaseAction):
 
             d = template_recursive(d, self._templar)
 
-            # optionally handle internal _merge_with keys
+            # optionally handle internal _merge_with and other special keys
             d = handle_map_inheritance(d, self._ansible_varspace, 
+              active_dyn_profiles=active_dyn_profiles,
               templater=self._templar
             )
 
