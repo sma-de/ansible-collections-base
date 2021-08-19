@@ -1,0 +1,26 @@
+---
+
+  - set_fact:
+      _tmp_mod_args: {}
+      _enable_mod: "{{ smabot_base_extended_facts_java | default(true) }}"
+
+  - set_fact:
+      _tmp_mod_args: "{{ smabot_base_extended_facts_java }}"
+      _enable_mod: true
+    when: smabot_base_extended_facts_java is mapping
+
+    ##
+    ## enabled when smabot_base_extended_facts_java is unset, is 
+    ## boolean true, or a mapping (filled or empty, doesn't matter)
+    ## 
+    ## disabled when smabot_base_extended_facts_java is explicitly 
+    ## set to false or None
+    ##
+    ## when smabot_base_extended_facts_java is a mapping, use it 
+    ## as params for module
+    ##
+  - name: collect facts about JVM installation(s) on target
+    smabot.base.java_facts: >-
+      {{ _tmp_mod_args }}
+    when: _enable_mod
+
