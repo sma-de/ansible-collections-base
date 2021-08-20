@@ -356,3 +356,12 @@ class AnsSpaceAndArgsPlugin(ArgsPlugin):
 
         return detemplate(self._ansible_varspace[var], self._templar)
 
+
+    def get_ansible_fact(self, fact, default=KWARG_UNSET):
+        facts = self.get_ansible_var('ansible_facts')
+        
+        if default == KWARG_UNSET:
+            return facts[fact]
+
+        return facts.get(fact, default)
+
