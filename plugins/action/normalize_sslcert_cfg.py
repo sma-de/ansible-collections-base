@@ -9,7 +9,12 @@ import os
 from ansible.errors import AnsibleOptionsError
 from ansible.plugins.filter.core import to_bool
 
-from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normalizing.base import ConfigNormalizerBase, NormalizerBase, NormalizerNamed
+from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normalizing.base import \
+  ConfigNormalizerBase, \
+  DefaultSetterConstant, \
+  NormalizerBase, \
+  NormalizerNamed
+
 from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normalizing.proxy import ConfigNormerProxy
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import get_subdict, SUBDICT_METAKEY_ANY
 from ansible_collections.smabot.base.plugins.action import command_which
@@ -77,78 +82,60 @@ class SslCertNormEcoSysABC(NormalizerBase):
         )
 
 
+
 class SslCertNormEcoJava(SslCertNormEcoSysABC):
 
     def __init__(self, *args, **kwargs):
+        self._add_defaultsetter(kwargs, 
+          'active_only', DefaultSetterConstant(False)
+        )
+
         super(SslCertNormEcoJava, self).__init__(*args, **kwargs)
+
 
     @property
     def config_path(self):
         return ['java']
 
-    def _handle_specifics_presub_specific(self, cfg, my_subcfg, cfgpath_abs, auto_detect):
-        jvm_homedir = my_subcfg.get('jvm_homedir', None)
 
-        if jvm_homedir:
-            return my_subcfg
+    def _handle_specifics_presub_specific(self, 
+        cfg, my_subcfg, cfgpath_abs, auto_detect
+    ):
+        jfact = self.pluginref.get_ansible_fact('java', None)
 
-        ## jvm home not explicitly given, try auto detecting
-        ansenv = self.pluginref.get_ansible_var('ansible_env', {})
-        jhome_envvar = ansenv.get('JAVA_HOME', None)
-
-        mres = self.pluginref.run_other_action_plugin(command_which.ActionModule,
-          plugin_args={'cmd': 'java'}, ignore_error=True
-        )
-
-        jhome_from_exe = None
-
-        if not mres.get('failed', False):
-            jhome_from_exe = os.path.dirname(os.path.dirname(mres['linksrc']))
-
-        if not jhome_envvar and not jhome_from_exe:
-            ## auto detecting could not find any java home, 
-            ## assume that java is not a thing for system currently handled
-
+        if not jfact:
+            # no java environment detected on target system, 
+            # we are done here
             if not auto_detect:
                 raise AnsibleOptionsError(
                    "Auto detect failed to find any java home but user"\
                    " explicitly activated java cert handling, either set"\
-                   " 'activate' key to '{}' if this is acceptable or give"\
-                   " an explicit java home path with the 'jvm_homedir' key"\
+                   " 'activate' key to '{}' if this is acceptable or"\
                    " if you are sure that a java installation exist and"\
-                   " should be cert handled.".format(CONFIG_KEYWORD_AUTODETECT)
+                   " should be cert handled make sure java_facts module"\
+                   " is run before this and if this still does not help"\
+                   " try some advanced configuration options for"\
+                   " java_facts to help it succesfully detect your java"\
+                   " environment (like for example try-paths)".format(
+                       CONFIG_KEYWORD_AUTODETECT
+                   )
                 )
 
+            ## auto detect mode and no java detected, noop
             return my_subcfg
 
-        if jhome_envvar and jhome_from_exe:
+        jvms = []
 
-            if jhome_envvar != jhome_from_exe:
-                raise AnsibleOptionsError(
-                   "Auto detect found more than one possible java home,"\
-                   " '{}' from environment and '{}' from java executable"\
-                   " $PATH, choose one explicitly by setting the"\
-                   " 'jvm_homedir' key".format(jhome_envvar, jhome_from_exe)
-                )
-
-            my_subcfg['jvm_homedir'] = jhome_envvar
-        elif jhome_envvar:
-            my_subcfg['jvm_homedir'] = jhome_envvar
+        if my_subcfg['active_only']:
+            ## only handle active jvm
+            jvms.append(jfact['active'])
         else:
-            my_subcfg['jvm_homedir'] = jhome_from_exe
+            ## handle all detected java environments
+            jvms += jfact['installations']
 
-        testpath = os.path.join(my_subcfg['jvm_homedir'], 'bin', 'java')
-
-        mres = self.pluginref.exec_module('ansible.builtin.stat', 
-          modargs={'path': testpath}
-        )
-
-        ansible_assert(mres['stat']['isreg'], 
-           "bad cfg: final value for jvm_homedir '{}' seems not to"\
-           " have a valid java home structure".format(my_subcfg['jvm_homedir'])
-        )
-
+        my_subcfg['_jvms'] = jvms
         return my_subcfg
+
 
 
 class SslCertNormEcoPython(SslCertNormEcoSysABC):

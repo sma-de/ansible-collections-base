@@ -1,0 +1,98 @@
+---
+
+    ##
+    ## note: returns with rc == 0 when given path belongs to an os 
+    ## package, and rc =! 0 when not, works only for files, not dirs
+    ##
+  - name: check if jvm is managed by os package  ==>>  {{ _iter_jvm.homedir }}
+    ansible.builtin.command:
+      argv:
+        - apk
+        - info
+        - "--who-owns"
+        - "{{ _iter_jvm.binary }}"
+    register: _tmp_jvm_from_package
+    changed_when: false
+    failed_when: false
+
+    ##
+    ## note: when the jvm is a distro managed package, we actually dont 
+    ##   have to do anything, java is using os trust on default, like we want
+    ##
+
+  - block:
+
+      - set_fact:
+          os_trust_store_java: /etc/ssl/certs/java/cacerts
+
+        ##
+        ## note: the exact subpath differs between different jvm variants, 
+        ##   so we search for it assuming the filename is universal and 
+        ##   unique
+        ##
+      - name: search for cert container inside java home  ==>>  {{ _iter_jvm.homedir }}
+        ansible.builtin.find:
+          paths: "{{ _iter_jvm.homedir }}"
+          patterns: cacerts
+          recurse: true
+          file_type: any
+        register: _tmp_search_res
+
+
+        ##
+        ## do various sanity checks on search result
+        ##
+
+      - ansible.builtin.assert:
+          that:
+            - _tmp_search_res.matched > 0
+          fail_msg: >-
+            Failed to find cacerts inside java home
+            dir '{{ _iter_jvm.homedir }}'
+
+      - ansible.builtin.assert:
+          that:
+            - _tmp_search_res.matched == 1
+          fail_msg: >-
+            Found more than one cacerts file inside java home
+            dir '{{ _iter_jvm.homedir }}'. This is very strange:
+            {{ _tmp_search_res.files }}
+
+      - ansible.builtin.assert:
+          that:
+            - not _tmp_search_res.files[0].isdir
+
+
+      - name: cacerts is link to some other file, simply unlink it
+        ansible.builtin.file:
+          path: "{{ _tmp_search_res.files[0].path }}"
+          state: absent
+        when: >-
+          _tmp_search_res.files[0].islnk and
+          _tmp_search_res.files[0].lnk_source != os_trust_store_java
+
+
+      - block:
+
+          - name: to be absolutely safe create a backup of original cacerts
+            ansible.builtin.copy:
+              src: "{{ _tmp_search_res.files[0].path }}"
+              dest: "{{ _tmp_search_res.files[0].path }}.bkp"
+              remote_src: yes
+              ##force: no
+
+          - ansible.builtin.file:
+              path: "{{ _tmp_search_res.files[0].path }}"
+              state: absent
+
+        when: _tmp_search_res.files[0].isreg
+
+
+      - name: map custom jvm trust to os trust store  ==>>  {{ _iter_jvm.homedir }}
+        ansible.builtin.file:
+          path: "{{ _tmp_search_res.files[0].path }}"
+          src: "{{ os_trust_store_java }}"
+          state: link
+
+    when: _tmp_jvm_from_package.rc != 0
+

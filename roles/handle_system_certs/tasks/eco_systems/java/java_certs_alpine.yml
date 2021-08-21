@@ -11,39 +11,8 @@
       state: present
 
 
-    ##
-    ## note: returns with rc == 0 when given path belongs to an os 
-    ## package, and rc =! 0 when not, works only for files, not dirs
-    ##
-  - name: check if jvm is managed by os package
-    ansible.builtin.command:
-      argv:
-        - apk
-        - info
-        - "--who-owns"
-        - "{{ handle_system_certs_args_normed.eco_systems.java.jvm_homedir }}/bin/java"
-    register: _tmp_jvm_from_package
-    changed_when: false
-    failed_when: false
-
-    ##
-    ## note: when the jvm is a distro managed package, we actually dont 
-    ##   have to do anything, java is using os trust on default, like we want
-    ##
-
-  - name: map custom jvm trust to os trust store
-    block:
-
-      - set_fact:
-          _tmp_jvm_trustdir: "{{ handle_system_certs_args_normed.eco_systems.java.jvm_homedir }}/jre/lib/security"
-          _tmp_jvm_trustfile_bkp: .cacerts.bkp
-
-      - shell:
-          cmd: >-
-            cd "{{ handle_system_certs_args_normed.eco_systems.java.jvm_homedir }}/jre/lib/security/" 
-            && mv cacerts "{{ _tmp_jvm_trustfile_bkp }}" 
-            && ln -s /etc/ssl/certs/java/cacerts .
-          creates: "{{ _tmp_jvm_from_package }}/{{ _tmp_jvm_trustfile_bkp }}" 
-
-    when: _tmp_jvm_from_package.rc != 0
+  - include_tasks: java_certs_alpine_loop.yml
+    loop: "{{ handle_system_certs_args_normed.eco_systems.java._jvms }}"
+    loop_control:
+      loop_var: _iter_jvm
 

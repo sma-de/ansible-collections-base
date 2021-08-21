@@ -11,7 +11,10 @@
     shell:
       cmd: >-
         cd '{{ _tmp_ssltest_tmpdir.path }}'
-        && {{ handle_system_certs_args_normed.eco_systems.java.jvm_homedir }}/bin/javac CheckSsl.java 
-        && {{ handle_system_certs_args_normed.eco_systems.java.jvm_homedir }}/bin/java CheckSsl
+        && {{ _iter_jvm.homedir }}/bin/javac CheckSsl.java 
+        && {{ _iter_jvm.binary }} CheckSsl
     changed_when: false
+    loop: "{{ handle_system_certs_args_normed.eco_systems.java._jvms }}"
+    loop_control:
+      loop_var: _iter_jvm
 

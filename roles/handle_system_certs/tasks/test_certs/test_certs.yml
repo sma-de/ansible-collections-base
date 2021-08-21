@@ -69,7 +69,7 @@
 
     ## TODO: this test needs a java compiler on remote, so make sure to only run when its exists
   - include_tasks: test_certs_java.yml
-    when: handle_system_certs_args_normed.eco_systems.java.jvm_homedir is truthy
+    when: handle_system_certs_args_normed.eco_systems.java.activate
 
 
   - include_tasks: test_certs_python.yml
