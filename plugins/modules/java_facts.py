@@ -215,34 +215,64 @@ class JVM_DetectorFallback(JVM_Detector):
         return 'UNKOWN'
 
 
-class JVM_DetectorAdoptOpenJdk(JVM_Detector):
+class JVM_DetectorRegexId(JVM_Detector):
+
+    @abc.abstractmethod
+    def _get_type_regex(self):
+        pass
+
+    @abc.abstractmethod
+    def _get_type_id(self):
+        pass
+
+    def _get_test_line(self, verout):
+        return verout[1]
 
     def detect_type(self, verout):
-        line = verout[1]
-        tmp = re.search(r'(?i)adoptopenjdk', line)
+        line = self._get_test_line(verout)
+        tmp = re.search(self._get_type_regex(), line)
 
         if tmp:
-            return 'AdoptOpenJDK'
+            return self._get_type_id()
 
         return None
 
 
-class JVM_DetectorOpenJ9(JVM_Detector):
+## TODO: temurin seems to be the successor project of AdoptOpenJDK, should this be refected somehow in facts???
+class JVM_DetectorTemurin(JVM_DetectorRegexId):
 
-    def detect_type(self, verout):
-        line = verout[2]
-        tmp = re.search(r'(?i)\bopenj9', line)
+    def _get_type_regex(self):
+        return r'(?i)temurin'
 
-        if tmp:
-            return 'OpenJ9'
+    def _get_type_id(self):
+        return 'Temurin'
 
-        return None
 
+class JVM_DetectorAdoptOpenJdk(JVM_DetectorRegexId):
+
+    def _get_type_regex(self):
+        return r'(?i)adoptopenjdk'
+
+    def _get_type_id(self):
+        return 'AdoptOpenJDK'
+
+
+class JVM_DetectorOpenJ9(JVM_DetectorRegexId):
+
+    def _get_type_regex(self):
+        return r'(?i)\bopenj9'
+
+    def _get_type_id(self):
+        return 'OpenJ9'
+
+    def _get_test_line(self, verout):
+        return verout[2]
 
 
 jvm_detectors = [
   JVM_DetectorAdoptOpenJdk,
   JVM_DetectorOpenJ9,
+  JVM_DetectorTemurin,
 
   ## must always be the last
   JVM_DetectorFallback
