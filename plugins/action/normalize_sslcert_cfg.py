@@ -122,6 +122,7 @@ class SslCertNormEcoJava(SslCertNormEcoSysABC):
                 )
 
             ## auto detect mode and no java detected, noop
+            my_subcfg['activate'] = False
             return my_subcfg
 
         jvms = []
@@ -173,6 +174,7 @@ class SslCertNormEcoPython(SslCertNormEcoSysABC):
                    " should be cert handled.".format(CONFIG_KEYWORD_AUTODETECT)
                 )
 
+            my_subcfg['activate'] = False
             return my_subcfg
 
         my_subcfg['python_binary'] = pybin_by_which
