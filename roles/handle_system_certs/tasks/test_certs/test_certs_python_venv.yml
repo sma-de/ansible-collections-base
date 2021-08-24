@@ -1,0 +1,10 @@
+---
+
+  - name: run python test mini script  ==>>  {{ _test_certs_urliter }}
+    ansible.builtin.shell:
+      cmd: >-
+        cd '{{ _tmp_ssltest_tmpdir.path }}'
+        && . '{{ SMABOT_BASE_CURVENV_PATH }}/bin/activate'
+        && python check_ssl.py
+    changed_when: false
+

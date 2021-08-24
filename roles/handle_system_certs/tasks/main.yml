@@ -41,6 +41,9 @@
  
 
     ## if active, handle python ssl certs
+    ##
+    ## note: technically this handled atm certs only for requests pylib not for py in general (which is not a thing perse it seems)
+    ##
   - include_tasks: eco_systems/python/handle_python.yml
     when: handle_system_certs_args_normed.eco_systems.python.activate
 

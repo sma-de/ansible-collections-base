@@ -7,10 +7,25 @@
     changed_when: false
 
 
-  - name: run python test mini script  ==>>  {{ _test_certs_urliter }}
-    shell:
-      cmd: >-
-        cd '{{ _tmp_ssltest_tmpdir.path }}'
-        && '{{ handle_system_certs_args_normed.eco_systems.python.python_binary }}' check_ssl.py
-    changed_when: false
+  - set_fact:
+      _tmp_roledir_smabot_base_syscerts: "{{ role_path }}"
+
+    ##
+    ## note: we need some extra pylibs for this tests, but 
+    ##   obviously dont want to change global machine state 
+    ##   permanently just for the tests to be okay, so we 
+    ##   run the test inside a throw away py virtual env
+    ##
+  - include_role:
+      name: smabot.base.run_inside_venv
+    vars:
+      smabot_base_run_inside_venv_cfg:
+## note: expanding of vars here is delayed, which give us the wrong role-path, so we use a tmp fact to force correct expansion
+##       tasks: "{{ role_path }}/tasks/test_certs/test_certs_python_venv.yml"
+        tasks: "{{ _tmp_roledir_smabot_base_syscerts }}/tasks/test_certs/test_certs_python_venv.yml"
+        pip:
+          extra_packages:
+            - requests
+##        venv:
+##          site_packages: true ## default
 
