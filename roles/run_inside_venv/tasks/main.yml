@@ -1,0 +1,77 @@
+---
+
+##
+## role which allows to run arbitrary ansible code 
+## inside a python virtual env
+##
+
+  - smabot.base.normalize_inside_venv_cfg:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_run_inside_venv_cfg_normed: "{{ _tmp_normed_cfg.normalized }}"
+
+
+  - name: assure necessary os packages are avaible
+    apt:
+      name:
+        - python3-venv
+      update_cache: yes
+      install_recommends: no
+    register: _tmp_installed_packages
+    when: ansible_os_family == "Debian"
+
+
+  - name: >-
+      create venv and install custom pip packages
+       ==>>  {{ smabot_base_run_inside_venv_cfg_normed.venv.path }}
+    ansible.builtin.pip: "{{ smabot_base_run_inside_venv_cfg_normed.pip.opts }}"
+
+
+  - name: publish active venv path
+    set_fact:
+      SMABOT_BASE_CURVENV_PATH: "{{ smabot_base_run_inside_venv_cfg_normed.venv.path }}"
+
+
+  - name: >-
+      run ansible stuff inside venv
+       ==>>  {{ smabot_base_run_inside_venv_cfg_normed.venv.path }}
+    include_role:
+      name: smabot.base.exec_custom_anspython
+    vars:
+      smabot_base_exec_custom_anspython_cfg:
+        pybin: "{{ smabot_base_run_inside_venv_cfg_normed.venv.pybin }}"
+
+        role: >-
+          {{ smabot_base_run_inside_venv_cfg_normed.role 
+           | default(False, True) }}
+
+        tasks: >-
+          {{ smabot_base_run_inside_venv_cfg_normed.tasks 
+           | default(False, True) }}
+
+
+  - set_fact:
+      SMABOT_BASE_CURVENV_PATH:
+
+
+  - name: >-
+      remove venv again
+       ==>>  {{ smabot_base_run_inside_venv_cfg_normed.venv.path }}
+    ansible.builtin.file:
+      dest: "{{ smabot_base_run_inside_venv_cfg_normed.venv.path }}"
+      state: absent
+    when: smabot_base_run_inside_venv_cfg_normed.venv.keep is falsy
+
+
+## TODO: we need to determine which packages we actually installed in step above (and so should be removed here) and which where already there
+##  - name: remove os packages installled just for this role
+##    apt:
+##      name:
+##        - python3-venv
+##      purge: yes
+##      autoremove: yes
+##    when: >-
+##      not smabot_base_run_inside_venv_cfg_normed.keep_os_packages
+##      and ansible_os_family == "Debian"
+
