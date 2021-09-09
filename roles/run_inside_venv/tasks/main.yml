@@ -13,7 +13,7 @@
 
 
   - name: assure necessary os packages are avaible
-    apt:
+    ansible.builtin.apt:
       name:
         - python3-venv
       update_cache: yes
