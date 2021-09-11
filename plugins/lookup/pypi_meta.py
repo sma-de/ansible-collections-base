@@ -67,6 +67,13 @@ def parse_slice(slice_raw):
     return slice(*slice_args)
 
 
+##
+## Sources for PyPi API:
+##
+##   -> https://warehouse.pypa.io/api-reference/json.html
+##
+## TODO: base this on a generic pypi openapi generated lib (??) (is there atm an open api desc for pypi??)
+##
 class LookupModule(BaseLookup):
 
     @property

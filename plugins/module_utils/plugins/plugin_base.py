@@ -338,7 +338,7 @@ class ArgsPlugin():
         except Exception as e:
             raise AnsibleInternalError("{}{}".format(self.error_prefix,
                to_native("Unhandled native error {}: {}".format(type(e), e))
-            ))
+            )) from e
 
 
 class AnsSpaceAndArgsPlugin(ArgsPlugin):
