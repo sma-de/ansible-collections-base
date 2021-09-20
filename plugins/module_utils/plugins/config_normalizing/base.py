@@ -209,7 +209,10 @@ class NormalizerBase(abc.ABC):
 
         if subnorms_lazy:
             display.deprecated("dont use old style sub_normalizers_lazy anymore")
-            subnorms += subnorms_lazy
+
+            for sn in subnorms_lazy:
+                subnorms.append((sn, True))
+
             subnorms_lazy.clear()
 
 ##            for sn in subnorms_lazy:
