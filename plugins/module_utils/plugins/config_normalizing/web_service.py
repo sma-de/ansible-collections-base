@@ -30,6 +30,11 @@ def connection_as_url(conn):
     if p:
         tmp += ':' + str(p)
 
+    p = conn['path']
+
+    if p:
+        tmp += '/' + str(p)
+
     return tmp
 
 
@@ -87,19 +92,23 @@ class ConfigNormerGitServer(ConfigNormerWebservice):
 
 class ConfigNormerConnection(NormalizerBase):
 
-    def __init__(self, *args, config_path=None, default_scheme='https', 
+    def __init__(self, *args, config_path=None, default_scheme='https',
       default_port='', extra_connection=False, **kwargs
     ):
-        self._add_defaultsetter(kwargs, 
+        self._add_defaultsetter(kwargs,
            'scheme', DefaultSetterConstant(default_scheme)
         )
 
-        self._add_defaultsetter(kwargs, 
+        self._add_defaultsetter(kwargs,
            'port', DefaultSetterConstant(default_port)
         )
 
-        self._add_defaultsetter(kwargs, 
+        self._add_defaultsetter(kwargs,
            'user', DefaultSetterConstant('')
+        )
+
+        self._add_defaultsetter(kwargs,
+           'path', DefaultSetterConstant('')
         )
 
         self._config_path = config_path or ['connection']
