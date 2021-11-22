@@ -16,6 +16,7 @@
     ansible.builtin.apt:
       name:
         - python3-venv
+        - python3-setuptools
       update_cache: yes
       install_recommends: no
     register: _tmp_installed_packages
