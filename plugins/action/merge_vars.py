@@ -143,7 +143,12 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
         if not defaults:
             return mapping  ## noop
 
-        merge_dicts(mapping, copy.deepcopy(defaults))
+        merge_dicts(mapping, copy.deepcopy(defaults),
+          # obviously an explicitly set value has higher
+          # prio than its default(s)
+          strats_fallback=['use_existing']
+        )
+
         ignore_subkeys = [defaultkey]
 
     merge_all = None
@@ -187,15 +192,12 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
 
         ## TODO: also merge to sublists???
         if isinstance(v, collections.abc.Mapping):
-            if merge_all:
-                tmp = {}
+            tmp = {}
 
+            if merge_all:
                 for ma in merge_all:
                     merge_dicts(tmp, ma)
 
-                merge_dicts(v, tmp)
-
-            ## more specific matches have precedence over generic '*'
             for (rm, rv) in iteritems(regex_mergers):
                 display.vvv(
                    "merge: defaulting: test regex merger '{}'"\
@@ -208,7 +210,15 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
                        " to key '{}'".format(rm, k)
                     )
 
-                    merge_dicts(v, rv)
+                    ## more specific matches have precedence over generic '*'
+                    merge_dicts(tmp, rv)
+
+            if tmp:
+                merge_dicts(v, tmp,
+                  # obviously an explicitly set value has higher
+                  # prio than its default(s)
+                  strats_fallback=['use_existing']
+                )
 
             ismap = True
 

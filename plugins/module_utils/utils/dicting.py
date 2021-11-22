@@ -28,7 +28,7 @@ SELFREF_END = ':}'
 
 
 ## TODO: support other merge strats, make them settable by caller??
-def merge_dicts(da, db):
+def merge_dicts(da, db, strats_fallback=None):
     ''' TODO '''
 
     ## note: ansible does not like raw lib import errors, so move 
@@ -47,7 +47,7 @@ def merge_dicts(da, db):
       ],
       # next, choose the fallback strategies,
       # applied to all other types:
-      ["override"],
+      strats_fallback or ["override"],
       # finally, choose the strategies in
       # the case where the types conflict:
       ["override"]
