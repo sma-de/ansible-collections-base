@@ -1,22 +1,21 @@
 ---
 
     ##
-    ## note: returns with rc == 0 when given path belongs to an os 
+    ## note: returns with rc == 0 when given path belongs to an os
     ## package, and rc =! 0 when not, works only for files, not dirs
     ##
   - name: check if jvm is managed by os package  ==>>  {{ _iter_jvm.homedir }}
     ansible.builtin.command:
       argv:
-        - apk
-        - info
-        - "--who-owns"
+        - dpkg
+        - "-S"
         - "{{ _iter_jvm.binary }}"
     register: _tmp_jvm_from_package
     changed_when: false
     failed_when: false
 
     ##
-    ## note: when the jvm is a distro managed package, we actually dont 
+    ## note: when the jvm is a distro managed package, we actually dont
     ##   have to do anything, java is using os trust on default, like we want
     ##
 

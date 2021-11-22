@@ -1,0 +1,88 @@
+---
+
+  ##
+  ## the idea of this play is to use for any custom jvm for
+  ## which this might be called the systen / os default keystore,
+  ## which normally should be properly managed / managable as imho
+  ## having a single common cert store saves a lot of hassle
+  ##
+  ## we do this by replacing the keystore file inside the java
+  ## home with a symlink to the system certfile
+  ##
+
+
+  - set_fact:
+      os_trust_store_java: >-
+        {{ os_trust_store_java
+         | default('/etc/ssl/certs/java/cacerts', True) }}
+
+
+    ##
+    ## note: the exact subpath differs between different jvm variants,
+    ##   so we search for it assuming the filename is universal and
+    ##   unique
+    ##
+  - name: search for cert container inside java home  ==>>  {{ _iter_jvm.homedir }}
+    ansible.builtin.find:
+      paths: "{{ _iter_jvm.homedir }}"
+      patterns: cacerts
+      recurse: true
+      file_type: any
+    register: _tmp_search_res
+
+
+    ##
+    ## do various sanity checks on search result
+    ##
+
+  - ansible.builtin.assert:
+      that:
+        - _tmp_search_res.matched > 0
+      fail_msg: >-
+        Failed to find cacerts inside java home
+        dir '{{ _iter_jvm.homedir }}'
+
+  - ansible.builtin.assert:
+      that:
+        - _tmp_search_res.matched == 1
+      fail_msg: >-
+        Found more than one cacerts file inside java home
+        dir '{{ _iter_jvm.homedir }}'. This is very strange:
+        {{ _tmp_search_res.files }}
+
+  - ansible.builtin.assert:
+      that:
+        - not _tmp_search_res.files[0].isdir
+
+
+  - name: cacerts is link to some other file, simply unlink it
+    ansible.builtin.file:
+      path: "{{ _tmp_search_res.files[0].path }}"
+      state: absent
+    when: >-
+      _tmp_search_res.files[0].islnk and
+      _tmp_search_res.files[0].lnk_source != os_trust_store_java
+
+
+  - block:
+
+      - name: to be absolutely safe create a backup of original cacerts
+        ansible.builtin.copy:
+          src: "{{ _tmp_search_res.files[0].path }}"
+          dest: "{{ _tmp_search_res.files[0].path }}.bkp"
+          remote_src: yes
+          ##force: no
+
+      - ansible.builtin.file:
+          path: "{{ _tmp_search_res.files[0].path }}"
+          state: absent
+
+    when: _tmp_search_res.files[0].isreg
+
+
+  - name: map custom jvm trust to os trust store  ==>>  {{ _iter_jvm.homedir }}
+    ansible.builtin.file:
+      path: "{{ _tmp_search_res.files[0].path }}"
+      src: "{{ os_trust_store_java }}"
+      state: link
+
