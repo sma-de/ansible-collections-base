@@ -13,6 +13,7 @@ __metaclass__ = type
 
 import abc
 import collections
+import copy
 
 from ansible.errors import AnsibleOptionsError##, AnsibleError, AnsibleModuleError, AnsibleAssertionError, AnsibleParserError
 ####from ansible.module_utils._text import to_native
@@ -340,6 +341,45 @@ class NormalizerBase(abc.ABC):
             if tmp:
                 continue
 
+            # optionally handle subdict ans var merge
+            for avm in subcfg.pop('_merge_ansvars_lazy', []):
+                if not isinstance(avm, collections.abc.Mapping):
+                    ## assume string describing an ansible varname
+                    avm = { 'varname': avm }
+
+                # get content to merge
+                to_merge = self.pluginref.get_ansible_var(
+                   avm['varname'], default=None
+                )
+
+                ansible_assert(to_merge or avm.get('optional', False), 
+                   "Mandatory variable to merge '{}' either not"\
+                   " set or set to null".format(avm['varname'])
+                )
+
+                # if unset optionally use default
+                to_merge = to_merge or avm.get('default')
+
+                if not to_merge:
+                    continue # nothing to merge
+
+                ansible_assert(isinstance(to_merge, collections.abc.Mapping),
+                   "Content of variable to merge ('{}') must be a dict, but"\
+                   " is of type '{}' instead: {}".format(
+                      avm['varname'], type(to_merge), to_merge
+                   )
+                )
+
+                if avm.get('high_prio', False):
+                    a = subcfg
+                    b = copy.deepcopy(to_merge)
+                else:
+                    a = copy.deepcopy(to_merge)
+                    b = subcfg
+
+                merge_dicts(a, b)
+                subcfg = a
+
             subcfg = self._handle_default_setters(global_cfg, subcfg, sp_abs)
             subcfg = self._handle_specifics_presub(global_cfg, subcfg, sp_abs)
             subcfg = self._handle_sub_normalizers(global_cfg, subcfg, sp_abs)
@@ -390,7 +430,7 @@ class ConfigNormalizerBase(BaseAction):
     def merge_args(self):
         return {
           'invars': [{ 
-              'name': self.get_taskparam('config_ansvar'), 'optional': False
+             'name': self.get_taskparam('config_ansvar'), 'optional': False
           }],
         }
 
