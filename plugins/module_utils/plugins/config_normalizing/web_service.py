@@ -38,6 +38,9 @@ def connection_as_url(conn):
 
         tmp += '/' + str(p)
 
+        if conn.get('force_pathend_slash', False) and tmp[-1] != '/':
+            tmp += '/'
+
     return tmp
 
 

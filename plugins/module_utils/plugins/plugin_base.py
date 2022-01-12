@@ -349,12 +349,27 @@ class AnsSpaceAndArgsPlugin(ArgsPlugin):
 
 
     def get_ansible_var(self, var, default=KWARG_UNSET):
-        if default != KWARG_UNSET:
-            return detemplate(
-              self._ansible_varspace.get(var, default), self._templar
+        varkeys = var.split('.')
+
+        next_subkey = varkeys[0]
+        res = self._ansible_varspace.get(next_subkey, KWARG_UNSET)
+
+        for k in varkeys[1:]:
+            if res == KWARG_UNSET:
+                break
+
+            next_subkey = k
+            res = res.get(next_subkey, KWARG_UNSET)
+
+        if res == KWARG_UNSET:
+            ansible_assert(default != KWARG_UNSET,
+               "Failed to find subkey '{}' for mandatory"\
+               " ansible variable '{}'".format(next_subkey, var)
             )
 
-        return detemplate(self._ansible_varspace[var], self._templar)
+            return default
+
+        return detemplate(res, self._templar)
 
 
     def get_ansible_fact(self, fact, default=KWARG_UNSET):
@@ -366,7 +381,7 @@ class AnsSpaceAndArgsPlugin(ArgsPlugin):
             if facts == KWARG_UNSET:
                 ansible_assert(default != KWARG_UNSET,
                    "Failed to find subkey '{}' for mandatory"\
-                   " ansible variable '{}'".format(k, fact)
+                   " ansible fact key '{}'".format(k, fact)
                 )
 
                 return default
