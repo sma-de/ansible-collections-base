@@ -33,6 +33,9 @@ def connection_as_url(conn):
     p = conn['path']
 
     if p:
+        if isinstance(p, list):
+            p = '/'.join(p)
+
         tmp += '/' + str(p)
 
     return tmp
