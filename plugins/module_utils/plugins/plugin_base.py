@@ -348,6 +348,11 @@ class AnsSpaceAndArgsPlugin(ArgsPlugin):
         super(AnsSpaceAndArgsPlugin, self).__init__(*args, **kwargs)
 
 
+    @property
+    def remote_envvars(self):
+        return self._ansible_varspace.get('ansible_env', {})
+
+
     def get_ansible_var(self, var, default=KWARG_UNSET):
         varkeys = var.split('.')
 

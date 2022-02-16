@@ -140,6 +140,9 @@ class CopyItemNormalizer(NormalizerNamed):
     def simpleform_key(self):
         return 'dest'
 
+    def _expand_pathvars(self, path):
+        return str(path).format(**self.pluginref.remote_envvars)
+
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
         src = my_subcfg['src']
 
@@ -162,7 +165,9 @@ class CopyItemNormalizer(NormalizerNamed):
             ## note: for relative paths, source root must be set
             src = pathlib.PurePosixPath(cfg['source_root']) / src
 
-        my_subcfg['src'] = str(src) + src_suffix
+        # fill in python format vars "{foo}" with remote envvars in paths
+        my_subcfg['src'] = self._expand_pathvars(str(src) + src_suffix)
+        my_subcfg['dest'] = self._expand_pathvars(my_subcfg['dest'])
 
         if self.filterable:
             deffilter = cfg.get('filter_criteria', {})
