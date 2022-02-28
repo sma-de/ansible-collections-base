@@ -116,7 +116,7 @@ def template_recursive(mapping, templater, topmap=None, keychain=None):
             return matches[0]['replacement']
 
         for m in matches:
-            v = v.sub(m['key'], str(m['replacement']), v)
+            v = re.sub(m['key'], str(m['replacement']), v)
 
         return v
 
