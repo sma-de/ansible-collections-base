@@ -96,7 +96,7 @@ def template_recursive(mapping, templater, topmap=None, keychain=None):
 
                 selfref_key = tmp
 
-            tmp = get_subdict(topmap, selfref_key)
+            tmp = get_subdict(topmap, selfref_key, allow_nondict_leaves=True)
 
             if isinstance(tmp, collections.abc.Mapping) \
               or isinstance(tmp, list):
