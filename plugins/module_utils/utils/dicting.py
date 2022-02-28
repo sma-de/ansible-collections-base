@@ -78,8 +78,11 @@ def template_recursive(mapping, templater, topmap=None, keychain=None):
             selfref_key = selfref_key.split('.')
 
             if not selfref_key[0]:
-                # key is relative to current position
-                tmp = keychain[:]
+                # key is relative to current position (technically
+                # current key path parent, as self referencing one
+                # self does not really make sense in this context
+                # as we are replacing the content of current key)
+                tmp = keychain[:-1]
 
                 for k in selfref_key[1:]:
                     # when key part is a set value, append it to final
