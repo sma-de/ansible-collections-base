@@ -66,6 +66,7 @@ def template_recursive(mapping, templater, topmap=None, keychain=None):
             return v
 
         matches = []
+        obj = False
 
         for m in re.finditer(SELFREF_START + '\s*(\S*)\s*' + SELFREF_END, v):
             selfref_key = m.group(1)
@@ -107,9 +108,11 @@ def template_recursive(mapping, templater, topmap=None, keychain=None):
                    " like maps and lists".format(v)
                 )
 
+                obj = True
+
             matches.append({ 'key': m.group(0), 'replacement': tmp})
 
-        if len(matches) == 1:
+        if obj:
             return matches[0]['replacement']
 
         for m in matches:
