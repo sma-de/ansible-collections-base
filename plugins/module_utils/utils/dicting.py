@@ -60,8 +60,8 @@ def merge_dicts(da, db, strats_fallback=None):
 ##
 ## note: for some unfortunate reason inheritance breaks ansible templating, so we do it here ourselves
 ##
-def template_recursive(mapping, templater, topmap=None):
-    def handle_selfref(v, topmap):
+def template_recursive(mapping, templater, topmap=None, keychain=None):
+    def handle_selfref(v, topmap, keychain):
         if not isinstance(v, string_types):
             return v
 
@@ -76,6 +76,23 @@ def template_recursive(mapping, templater, topmap=None):
             )
 
             selfref_key = selfref_key.split('.')
+
+            if not selfref_key[0]:
+                # key is relative to current position
+                tmp = keychain[:]
+
+                for k in selfref_key[1:]:
+                    # when key part is a set value, append it to final
+                    # refkey, it is empty, this means we go one up
+                    # relative to current pos (like for relative python
+                    # lib imports)
+                    if k:
+                        tmp.append(k)
+                    else:
+                        tmp.pop()
+
+                selfref_key = tmp
+
             tmp = get_subdict(topmap, selfref_key)
 
             if isinstance(tmp, collections.abc.Mapping) \
@@ -99,6 +116,7 @@ def template_recursive(mapping, templater, topmap=None):
 
     if topmap is None:
         topmap = mapping
+        keychain = []
 
     ## TODO: also template keys like set_fact do
     is_map = isinstance(mapping, collections.abc.Mapping)
@@ -108,25 +126,36 @@ def template_recursive(mapping, templater, topmap=None):
     else:
         nm = []  # assume list
 
+    i = 0
     for v in mapping:
+
+        k = i
 
         if is_map:
             k = v
             v = mapping[k]
 
+        keychain.append(k)
+
         if not isinstance(v, collections.abc.Mapping) \
         and not isinstance(v, list):
-            v = handle_selfref(v, topmap)
+            v = handle_selfref(v, topmap, keychain)
             v = templater.template(v)
 
         if isinstance(v, collections.abc.Mapping) \
         or isinstance(v, list):
-            v = template_recursive(v, templater, topmap=topmap)
+            v = template_recursive(v, templater,
+              topmap=topmap, keychain=keychain
+            )
+
+        keychain.pop()
 
         if is_map:
             nm[k] = v
         else:
             nm.append(v)
+
+        i += 1
 
     return nm
 
