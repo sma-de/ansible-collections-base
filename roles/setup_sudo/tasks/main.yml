@@ -1,0 +1,24 @@
+---
+
+##
+## role which takes care of properly configuring sudo settings
+##
+
+  - smabot.base.normalize_setup_sudo_args:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_setup_sudo_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+
+
+  - name: assure necessary os packages are installed
+    ansible.builtin.package:
+      name:
+        - sudo
+
+
+  - include_tasks: mapping_loop.yml
+    loop: "{{ smabot_base_setup_sudo_args_normed.mappings | dict2items() }}"
+    loop_control:
+      loop_var: _iter_sudo_mappings
+

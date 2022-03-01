@@ -1,0 +1,13 @@
+---
+
+  - debug:
+      msg: "{{ lookup('template', 'sudoers.j2') }}"
+
+
+  - name: create sudo cfg for mapping  ==>>  {{ _iter_sudo_mappings.key }}
+    ansible.builtin.template: 
+      src: sudoers.j2
+      dest: "{{ _iter_sudo_mappings.value.cfgfile }}"
+      validate: 'visudo -cf %s'
+      mode: "440"
+
