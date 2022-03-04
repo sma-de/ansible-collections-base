@@ -1,0 +1,51 @@
+---
+
+##
+## role which handles installing software from source url, probably an archive
+##
+## smabot_base_setup_install_from_url_args:
+##   download:
+##     url: # mandatory <- simple key
+##     config: # directly passed through to download module
+##       checksum: # optional
+##   destination:
+##     path: # mandatory <- simply key
+##     unpacking:
+##       flatten: # optional, unset on default <- true (complete flattening), 2 [pos int] (remove this level of prefix paths), prefix-path (use this path as post flatten root)
+##
+
+  - smabot.base.normalize_install_from_url:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_setup_install_from_url_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+
+
+    # if optionally checksums are defined we will use them to determine
+    # if an install is necessary or not (skipping install when
+    # something exists on dest path with matching checksum)
+  - set_fact:
+      _skip_install: False
+
+
+  - block:
+
+      - name: >-
+          check if artifact is already installed on
+          remote  ==>>  {{ smabot_base_setup_install_from_url_args_normed.download.url }}
+        include_role:
+          name: smabot.base.do_checksum
+        vars:
+          smabot_base_do_checksum_args: >-
+            {{ smabot_base_setup_install_from_url_args_normed.prexist_test.config }}
+
+      - set_fact:
+          _skip_install: "{{ smabot_base_do_checksum_result }}"
+
+    when: >-
+      smabot_base_setup_install_from_url_args_normed.prexist_test.enabled
+
+
+  - include_tasks: handle_install.yml
+    when: not _skip_install
+

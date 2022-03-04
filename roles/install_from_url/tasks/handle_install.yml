@@ -1,0 +1,87 @@
+---
+
+  - name: create tmp download dir
+    ansible.builtin.tempfile:
+      state: directory
+    register: _tmp_dldir
+
+
+  - set_fact:
+      _tmp_dlargs: >-
+         {{ smabot_base_setup_install_from_url_args_normed.download.config
+          | combine({'dest': (_tmp_dldir.path, 'archive') | path_join }) }}
+
+  - name: download software to install from  ==>>  {{ _tmp_dlargs.url }}
+    ansible.builtin.get_url: "{{ _tmp_dlargs }}"
+
+
+## optionally check gpg keys
+
+  - set_fact:
+      _tmp_modargs: >-
+         {{ smabot_base_setup_install_from_url_args_normed.destination.config
+          | combine({
+              'path': smabot_base_setup_install_from_url_args_normed.destination.path | dirname,
+              'state': 'directory'
+          }) }}
+
+  - name: assure final destination parent dir exists
+    ansible.builtin.file: "{{ _tmp_modargs }}"
+
+
+  - block:
+
+      - name: assure final destination exists as dir
+        ansible.builtin.file: >-
+          {{ smabot_base_setup_install_from_url_args_normed.destination.config }}
+
+
+      - set_fact:
+          _tmp_modargs: >-
+             {{ smabot_base_setup_install_from_url_args_normed.destination.unpacking.config
+              | combine({'src': _tmp_dlargs.dest}) }}
+
+      - name: >-
+          unpack downloaded archive to final install
+          dir  ==>>  {{ _tmp_modargs.dest }}
+        ansible.builtin.unarchive: "{{ _tmp_modargs }}"
+
+
+        # optionally flatten final unpacked dir hierarchy
+      - smabot.base.flatten_filetree: >-
+          {{ smabot_base_setup_install_from_url_args_normed.destination.unpacking.flatten.config }}
+        when: smabot_base_setup_install_from_url_args_normed.destination.unpacking.flatten.enabled
+
+
+      - name: optionally checksum an archive contained reference file
+        include_role:
+          name: smabot.base.do_checksum
+        vars:
+          smabot_base_do_checksum_args: >-
+            {{ smabot_base_setup_install_from_url_args_normed.destination.unpacking.get('checksum', {}) }}
+        when: smabot_base_setup_install_from_url_args_normed.destination.unpacking.get('checksum', False)
+
+    when: smabot_base_setup_install_from_url_args_normed.destination.unpacking.enabled
+
+
+  - block:
+
+      - name: >-
+          downloaded file is no archive, simply move it to final
+          destination  ==>>  {{ smabot_base_setup_install_from_url_args_normed.destination.path }}
+        ansible.builtin.shell: >-
+          mv '{{ _tmp_dlargs.dest }}' '{{ smabot_base_setup_install_from_url_args_normed.destination.path }}'
+
+
+      - name: assure final destination file attributes as configured
+        ansible.builtin.file: >-
+          {{ smabot_base_setup_install_from_url_args_normed.destination.config }}
+
+    when: not smabot_base_setup_install_from_url_args_normed.destination.unpacking.enabled
+
+
+  - name: delete tmp download dir
+    ansible.builtin.file:
+      path: "{{ _tmp_dldir.path }}"
+      state: absent
+

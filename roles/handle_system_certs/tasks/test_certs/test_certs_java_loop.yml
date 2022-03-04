@@ -1,0 +1,11 @@
+---
+
+  - name: compile and run java test mini prog  ==>>  {{ _test_certs_urliter }}
+    ansible.builtin.shell:
+      cmd: >-
+        cd '{{ _tmp_ssltest_tmpdir.path }}'
+        && {{ _iter_jvm.compiler }} CheckSsl.java 
+        && {{ _iter_jvm.binary }} CheckSsl
+    changed_when: false
+    when: _iter_jvm.compiler
+

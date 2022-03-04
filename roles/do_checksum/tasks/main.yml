@@ -1,0 +1,51 @@
+---
+
+  ##
+  ## smabot_base_do_checksum_args:
+  ##   file: # filepath to check, mandatory
+  ##   checksum: # expected value
+  ##   optional: # when optional is set than a checksum mismatch
+  ##                (or checksum file not even existing) does not result in an error
+  ##
+
+  - set_fact:
+      _tmp_sumtype: >-
+         {{ smabot_base_do_checksum_args.checksum | split(':') | first }}
+      _tmp_sumval: >-
+         {{ smabot_base_do_checksum_args.checksum | split(':') | last }}
+
+
+  - name: >-
+      get checksum of type '{{ _tmp_sumtype }}'
+      for file  ==>>  {{ smabot_base_do_checksum_args.file }}
+    ansible.builtin.stat:
+      path: >-
+        {{ smabot_base_do_checksum_args.file }}
+
+      get_checksum: yes
+      checksum_algorithm: "{{ _tmp_sumtype }}"
+
+      get_mime: no
+      get_attributes: no
+    register: _tmp_checksum_stat
+    failed_when: >-
+      not _tmp_checksum_stat.stat.exists
+      and not smabot_base_do_checksum_args.get('optional', False)
+
+
+  - ansible.builtin.assert:
+      that:
+        - _tmp_checksum_stat.stat.checksum == _tmp_sumval
+      fail_msg: >-
+        Checksum mismatch for file '{{ smabot_base_do_checksum_args.file }}',
+        expected '{{ _tmp_sumval }}' but got
+        '{{ _tmp_checksum_stat.stat.checksum }}'  [Type: {{ _tmp_sumtype }}]
+    when: not smabot_base_do_checksum_args.get('optional', False)
+
+
+    ## save result in var so caller can use it for stuff
+  - set_fact:
+      smabot_base_do_checksum_result: >-
+        {{ _tmp_checksum_stat.get('stat', {}).get('checksum', '')
+           == _tmp_sumval }}
+

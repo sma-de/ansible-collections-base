@@ -1,0 +1,55 @@
+---
+
+##
+## role which manages the installation of the sonarqube cli scanner
+##
+## smabot_base_setup_sonarscan_args:
+##   version: # optional, defaults to latest
+##   download: <-- pasthrough to install_from_url
+##     config:
+##       checksum:
+##   java: # which java package to use defaults to recent and stable openjre probably
+##
+
+  - smabot.base.normalize_sonarqube_scanner_setup:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_setup_sonarscan_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+
+
+    ##
+    ## prepare "result var" of this role
+    ##
+  - set_fact:
+      smabot_base_setup_sonarscan_result:
+        envvars: "{{ smabot_base_setup_sonarscan_args_normed.envvars }}"
+        syspath: "{{ smabot_base_setup_sonarscan_args_normed.syspath }}"
+
+
+  - name: assure necessary os packages are installed
+    ansible.builtin.package:
+      name: "{{ smabot_base_setup_sonarscan_args_normed.os_packages.name }}"
+      state: present
+
+
+  - name: assure necessary python packages are installed
+    ansible.builtin.pip:
+      name: "{{ smabot_base_setup_sonarscan_args_normed.get('_pip_installs', []) }}"
+      state: present
+    when: smabot_base_setup_sonarscan_args_normed.get('_pip_installs', False)
+
+
+  - name: install scanner from archive file
+    include_role:
+      name: smabot.base.install_from_url
+    vars:
+      smabot_base_setup_install_from_url_args: >-
+        {{ smabot_base_setup_sonarscan_args_normed._install }}
+
+
+  - name: >-
+      assure that scanner use external / system java env instead of embedded one
+    ansible.builtin.lineinfile: "{{ smabot_base_setup_sonarscan_args_normed.java.force_external }}"
+    when: not smabot_base_setup_sonarscan_args_normed.java.use_embedded
+

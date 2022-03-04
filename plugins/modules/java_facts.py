@@ -350,6 +350,12 @@ class JavaFactCollector(AnsibleModule):
         home_from_path = self.get_bin_path('java')
 
         if home_from_path:
+            # note their is a good chance that this is a symbolic
+            # link, so make sure to resolve all links here
+            # 
+            # TODO: should we add binary symlinks to our facts return ??
+            home_from_path = os.path.realpath(home_from_path)
+
             # java binary should be here: $JAVA_HOME/bin/java
             # so going up two times should give us home
             home_from_path = os.path.dirname(os.path.dirname(home_from_path))
@@ -393,7 +399,6 @@ class JavaFactCollector(AnsibleModule):
 
             hp = h['path']
             mandatory = h.get('mandatory', False)
-            jbin_path = os.path.join(hp, h.get('binary', 'bin/java'))
 
             if not os.path.isabs(hp):
                 msg = "Paths must be absolute, so we will skip relative"\
@@ -427,6 +432,8 @@ class JavaFactCollector(AnsibleModule):
             if not really_new:
                 continue
 
+            jbin_path = os.path.join(hp, h.get('binary', 'bin/java'))
+
             if not os.path.isfile(jbin_path):
                 if mandatory:
                     self.fail_json(
@@ -438,8 +445,15 @@ class JavaFactCollector(AnsibleModule):
 
                 continue
 
+            # check if this java env contains a compiler
+            # (is a jdk) or not (is a jre)
+            jbin_comp = os.path.join(hp, h.get('compiler', 'bin/javac'))
+            if not os.path.isfile(jbin_comp):
+                jbin_comp = None
+
             tmp = {
-              'homedir': hp, 'binary': jbin_path, 'active': False
+              'homedir': hp, 'binary': jbin_path, 'active': False,
+              'compiler': jbin_comp
             }
 
             if not self.analyze_java_version(jbin_path, tmp, result):

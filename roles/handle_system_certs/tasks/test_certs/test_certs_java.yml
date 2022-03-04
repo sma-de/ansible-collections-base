@@ -7,13 +7,7 @@
     changed_when: false
 
 
-  - name: compile and run java test mini prog  ==>>  {{ _test_certs_urliter }}
-    shell:
-      cmd: >-
-        cd '{{ _tmp_ssltest_tmpdir.path }}'
-        && {{ _iter_jvm.homedir }}/bin/javac CheckSsl.java 
-        && {{ _iter_jvm.binary }} CheckSsl
-    changed_when: false
+  - include_tasks: test_certs_java_loop.yml
     loop: "{{ handle_system_certs_args_normed.eco_systems.java._jvms }}"
     loop_control:
       loop_var: _iter_jvm
