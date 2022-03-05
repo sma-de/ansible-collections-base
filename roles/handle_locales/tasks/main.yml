@@ -1,0 +1,46 @@
+---
+
+##
+## role which handles maintanance for locales
+##
+## smabot_base_handle_locales_args:
+##    present: # list of locales which should be avaible, defaults to ['C.UTF-8']
+##    absent: # list of locales which should not be there
+##    active: # default locale, defaults to first of present
+##    os_packages: # list of packages which needs are needed for localing, can optionally be overwritten but normally not necessary
+##    vars:
+##      # defaults the most important ones to active locale
+##      #LANG: ...
+##
+
+  - smabot.base.normalize_handle_locales:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_handle_locales_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+
+
+    ##
+    ## prepare "result var" of this role
+    ##
+  - set_fact:
+      smabot_base_handle_locales_result:
+        envvars: "{{ smabot_base_handle_locales_args_normed.vars }}"
+
+# assure necessary os packages are installed 
+# TODO
+
+# build locales
+# TODO
+## - name: Ensure a locale exists
+##  community.general.locale_gen:
+##    name: de_CH.UTF-8
+##    state: present
+
+# absent locales
+# TODO
+## - name: Ensure a locale exists
+##  community.general.locale_gen:
+##    name: de_CH.UTF-8
+##    state: absent
+
