@@ -24,6 +24,23 @@ from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ans
 
 
 
+def require_os_packages(basecfg, *packages):
+    os_pkg = basecfg['os_packages']['name']
+
+    for x in packages:
+        if x not in os_pkg:
+            os_pkg.append(x)
+
+
+def require_pip_packages(basecfg, *packages):
+    pips = setdefault_none(basecfg, '_pip_installs', [])
+
+    for x in packages:
+        if x not in pips:
+            pips.append(x)
+
+
+
 class RootCfgNormalizer(NormalizerBase):
 
     def __init__(self, pluginref, *args, **kwargs):
@@ -33,10 +50,10 @@ class RootCfgNormalizer(NormalizerBase):
 
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
-          DownloadNormer(pluginref),
           DestNormer(pluginref),
           JavaNormer(pluginref),
           OsPackageNormer(pluginref),
+          DownloadNormer(pluginref),
           SupportsNormer(pluginref),
         ]
 
@@ -79,14 +96,6 @@ class JavaNormer(NormalizerBase):
 
     JAVA_EMBEDDED_KEY = 'embedded'
 
-##    def __init__(self, pluginref, *args, **kwargs):
-##        subnorms = kwargs.setdefault('sub_normalizers', [])
-##        subnorms += [
-##          DownloadConfigNormer(pluginref),
-##        ]
-##
-##        super(DownloadNormer, self).__init__(pluginref, *args, **kwargs)
-
     @property
     def config_path(self):
         return ['java']
@@ -123,14 +132,6 @@ class JavaNormer(NormalizerBase):
 
 
 class OsPackageNormer(NormalizerBase):
-
-##    def __init__(self, pluginref, *args, **kwargs):
-##        subnorms = kwargs.setdefault('sub_normalizers', [])
-##        subnorms += [
-##          DownloadConfigNormer(pluginref),
-##        ]
-##
-##        super(DownloadNormer, self).__init__(pluginref, *args, **kwargs)
 
     @property
     def config_path(self):
@@ -173,14 +174,6 @@ class SupportShellNormer(NormalizerBase):
 
     NORMER_CONFIG_PATH = ['shell']
 
-##    def __init__(self, pluginref, *args, **kwargs):
-##        subnorms = kwargs.setdefault('sub_normalizers', [])
-##        subnorms += [
-##          DownloadConfigNormer(pluginref),
-##        ]
-##
-##        super(DownloadNormer, self).__init__(pluginref, *args, **kwargs)
-
     @property
     def config_path(self):
         return self.NORMER_CONFIG_PATH
@@ -189,19 +182,14 @@ class SupportShellNormer(NormalizerBase):
     def simpleform_key(self):
         return '_simple_formkey'
 
+
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
         # simpleform is not used itself atm as value, only to
         # cticate this cfg as a whole
         my_subcfg.pop(self.simpleform_key)
 
         pcfg = self.get_parentcfg(cfg, cfgpath_abs, level=2)
-        os_pkg = pcfg['os_packages']['name']
-
-        needed_os_packages = ['shellcheck']
-
-        for x in needed_os_packages:
-            if x not in os_pkg:
-                os_pkg.append(x)
+        require_os_packages(pcfg, 'shellcheck')
 
         return my_subcfg
 
@@ -211,14 +199,6 @@ class SupportPythonNormer(NormalizerBase):
 
     NORMER_CONFIG_PATH = ['python']
 
-##    def __init__(self, pluginref, *args, **kwargs):
-##        subnorms = kwargs.setdefault('sub_normalizers', [])
-##        subnorms += [
-##          DownloadConfigNormer(pluginref),
-##        ]
-##
-##        super(DownloadNormer, self).__init__(pluginref, *args, **kwargs)
-
     @property
     def config_path(self):
         return self.NORMER_CONFIG_PATH
@@ -233,14 +213,7 @@ class SupportPythonNormer(NormalizerBase):
         my_subcfg.pop(self.simpleform_key)
 
         pcfg = self.get_parentcfg(cfg, cfgpath_abs, level=2)
-
-        pips = setdefault_none(pcfg, '_pip_installs', [])
-
-        needed_pips = ['pylint']
-
-        for x in needed_pips:
-            if x not in pips:
-                pips.append(x)
+        require_pip_packages(pcfg, 'pylint')
 
         return my_subcfg
 
@@ -255,6 +228,11 @@ class DownloadNormer(NormalizerBase):
           )
         )
 
+        subnorms = kwargs.setdefault('sub_normalizers', [])
+        subnorms += [
+          (DownloadVerifyNormer, True),
+        ]
+
         super(DownloadNormer, self).__init__(pluginref, *args, **kwargs)
 
     @property
@@ -267,7 +245,35 @@ class DownloadNormer(NormalizerBase):
 
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
         pcfg = self.get_parentcfg(cfg, cfgpath_abs)
-        my_subcfg['url'] = my_subcfg['url'].format(**dict(VERSION=pcfg['version']))
+        my_subcfg['url'] = my_subcfg['url'].format(
+          **dict(VERSION=pcfg['version'])
+        )
+
+        return my_subcfg
+
+
+
+class DownloadVerifyNormer(NormalizerBase):
+
+    NORMER_CONFIG_PATH = ['verify']
+
+    @property
+    def config_path(self):
+        return self.NORMER_CONFIG_PATH
+
+    @property
+    def simpleform_key(self):
+        return 'fingerprint'
+
+    def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
+        pcfg = self.get_parentcfg(cfg, cfgpath_abs, level=2)
+
+        # TODO: in theory this should be handled more internally by install from url
+        # TODO: as we only need it during install it might also be a good idea to remove them after that again with a proper process
+        require_os_packages(pcfg, 'gnupg')
+        require_pip_packages(pcfg, 'python-gnupg')
+        require_pip_packages(pcfg, 'validators')
+
         return my_subcfg
 
 

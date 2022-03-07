@@ -15,7 +15,18 @@
     ansible.builtin.get_url: "{{ _tmp_dlargs }}"
 
 
-## optionally check gpg keys
+  - block:
+
+      - set_fact:
+          _tmp_modargs: >-
+             {{ smabot_base_setup_install_from_url_args_normed.download.verify
+              | combine({'file': _tmp_dlargs.dest}) }}
+
+      - name: optionally check gpg keys
+        smabot.base.gpg_verify: "{{ _tmp_modargs }}"
+
+    when: smabot_base_setup_install_from_url_args_normed.download.get('verify', False)
+
 
   - set_fact:
       _tmp_modargs: >-

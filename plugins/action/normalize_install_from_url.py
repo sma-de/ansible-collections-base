@@ -94,6 +94,7 @@ class DownloadNormer(NormalizerBase):
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
           DownloadConfigNormer(pluginref),
+          (DownloadVerifyNormer, True),
         ]
 
         super(DownloadNormer, self).__init__(pluginref, *args, **kwargs)
@@ -110,9 +111,6 @@ class DownloadNormer(NormalizerBase):
 
 class DownloadConfigNormer(NormalizerBase):
 
-##    def __init__(self, pluginref, *args, **kwargs):
-##        super(SudoMappingsNormer, self).__init__(pluginref, *args, **kwargs)
-
     @property
     def config_path(self):
         return ['config']
@@ -120,6 +118,25 @@ class DownloadConfigNormer(NormalizerBase):
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
         pcfg = self.get_parentcfg(cfg, cfgpath_abs)
         my_subcfg['url'] = pcfg['url']
+        return my_subcfg
+
+
+
+class DownloadVerifyNormer(NormalizerBase):
+
+    NORMER_CONFIG_PATH = ['verify']
+
+    @property
+    def config_path(self):
+        return self.NORMER_CONFIG_PATH
+
+    @property
+    def simpleform_key(self):
+        return 'fingerprint'
+
+    def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
+        pcfg = self.get_parentcfg(cfg, cfgpath_abs)
+        setdefault_none(my_subcfg, 'sigfile', pcfg['url'] + '.asc')
         return my_subcfg
 
 
