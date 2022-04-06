@@ -1,13 +1,10 @@
 ---
 
-  - name: check that root certificate exists
-    ansible.builtin.stat:
-      path: "{{ _custom_rootcert_iter }}"
-    become: no
-    delegate_to: localhost
-    register: _result
-    failed_when: 
-      - not _result.stat.exists or (not _result.stat.isreg and not _result.stat.isdir)
+  - include_role:
+      name: smabot.base.run_local
+    vars:
+      smabot_base_run_local_cfg:
+        tasks: "{{ smabot_base_handle_syscerts_role_path }}/tasks/delegate_local/check_rootcert_exists.yml"
 
 
     ## handle root cert(s) if given path specifies a single file

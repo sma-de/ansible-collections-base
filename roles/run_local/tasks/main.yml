@@ -1,0 +1,38 @@
+---
+
+##
+## role which handles some specialties to
+## consider when delegating to localhost
+##
+
+
+    ##
+    ## note: the general problem and main trick here is that when
+    ##   delegating a task the path set for ansible_python_interpreter
+    ##   intended for the current handled remote can match a valid python
+    ##   interpreter path on the ansible controller (aka localhost), but
+    ##   there is no guarantee and it is basically sheer luck if this works,
+    ##   but ansible luckily makes the interpreter path used on the controller
+    ##   avaible with the magic variable 'ansible_playbook_python', so the
+    ##   relatively simply solution we used here is to temporarly set
+    ##   ansible_python_interpreter to ansible_playbook_python during
+    ##   whatever should be delegated to localhost
+    ##
+  - name: >-
+      run ansible stuff prepared for local delegation
+    include_role:
+      name: smabot.base.exec_custom_anspython
+    vars:
+      smabot_base_exec_custom_anspython_cfg:
+        pybin: "{{ smabot_base_run_local_cfg.get('pybin', ansible_playbook_python) }}"
+
+        skip_pybin_check: true
+
+        role: >-
+          {{ smabot_base_run_local_cfg.role
+           | default(False, True) }}
+
+        tasks: >-
+          {{ smabot_base_run_local_cfg.tasks
+           | default(False, True) }}
+

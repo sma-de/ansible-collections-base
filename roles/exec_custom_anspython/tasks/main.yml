@@ -5,32 +5,36 @@
 ## python interpreter overwrite
 ##
 
-  - name: probe given python binary path
-    ansible.builtin.stat:
-      path: "{{ smabot_base_exec_custom_anspython_cfg.pybin }}"
-      get_checksum: no
-      get_mime: no
-      get_attributes: no
-    register: _tmp_statres
+  - block:
+
+      - name: probe given python binary path
+        ansible.builtin.stat:
+          path: "{{ smabot_base_exec_custom_anspython_cfg.pybin }}"
+          get_checksum: no
+          get_mime: no
+          get_attributes: no
+        register: _tmp_statres
 
 
-  - ansible.builtin.assert:
-      that:
-        - _tmp_statres.stat.exists
-      fail_msg: >-
-        Given python binary path
-        '{{ smabot_base_exec_custom_anspython_cfg.pybin }}' seems
-        not to exist on target.
+      - ansible.builtin.assert:
+          that:
+            - _tmp_statres.stat.exists
+          fail_msg: >-
+            Given python binary path
+            '{{ smabot_base_exec_custom_anspython_cfg.pybin }}' seems
+            not to exist on target.
 
 
-  - ansible.builtin.assert:
-      that:
-        - _tmp_statres.stat.executable
-      fail_msg: >-
-        Given python binary path
-        '{{ smabot_base_exec_custom_anspython_cfg.pybin }}' seems
-        not to be an executable or current user has no rights 
-        to access it.
+      - ansible.builtin.assert:
+          that:
+            - _tmp_statres.stat.executable
+          fail_msg: >-
+            Given python binary path
+            '{{ smabot_base_exec_custom_anspython_cfg.pybin }}' seems
+            not to be an executable or current user has no rights
+            to access it.
+
+    when: not smabot_base_exec_custom_anspython_cfg.get('skip_pybin_check', False)
 
 
   - set_fact:

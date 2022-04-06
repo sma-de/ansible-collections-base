@@ -18,6 +18,8 @@
         ##
         envvars: {}
 
+      smabot_base_handle_syscerts_role_path: "{{ role_path }}"
+
 
     ##
     ## as different different distros can often be in its details, 
