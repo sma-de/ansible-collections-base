@@ -1,14 +1,5 @@
 ---
 
-  - set_fact:
-      _tmp_mod_args: {}
-      _enable_mod: "{{ smabot_base_extended_facts_java | default(true) }}"
-
-  - set_fact:
-      _tmp_mod_args: "{{ smabot_base_extended_facts_java }}"
-      _enable_mod: true
-    when: smabot_base_extended_facts_java is mapping
-
     ##
     ## enabled when smabot_base_extended_facts_java is unset, is 
     ## boolean true, or a mapping (filled or empty, doesn't matter)
@@ -19,8 +10,33 @@
     ## when smabot_base_extended_facts_java is a mapping, use it 
     ## as params for module
     ##
+
+  - set_fact:
+      _tmp_mod_args: {}
+      _enable_mod: "{{ smabot_base_extended_facts_java | default(true) }}"
+
+  - set_fact:
+      _tmp_mod_args: "{{ smabot_base_extended_facts_java }}"
+      _enable_mod: true
+    when: smabot_base_extended_facts_java is mapping
+
   - name: collect facts about JVM installation(s) on target
     smabot.base.java_facts: >-
+      {{ _tmp_mod_args }}
+    when: _enable_mod
+
+
+  - set_fact:
+      _tmp_mod_args: {}
+      _enable_mod: "{{ smabot_base_extended_facts_pip | default(true) }}"
+
+  - set_fact:
+      _tmp_mod_args: "{{ smabot_base_extended_facts_pip }}"
+      _enable_mod: true
+    when: smabot_base_extended_facts_pip is mapping
+
+  - name: collect facts about py pip's found on target
+    smabot.base.pip_facts: >-
       {{ _tmp_mod_args }}
     when: _enable_mod
 
