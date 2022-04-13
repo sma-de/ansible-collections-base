@@ -178,6 +178,13 @@ class GetSubdictFilter(FilterBase):
                 if defval != DICTKEY_UNSET:
                     return defval
 
+                raise AnsibleOptionsError(
+                   "For given dict given subpath '{}'"\
+                   " is not mapped to anything".format(
+                      '.'.join(kc)
+                   )
+                )
+
         return res
 
 
