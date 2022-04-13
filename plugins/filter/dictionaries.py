@@ -136,7 +136,7 @@ class GetSubdictFilter(FilterBase):
 
     @property
     def argspec(self):
-        tmp = super(SubdictFilter, self).argspec
+        tmp = super(GetSubdictFilter, self).argspec
 
         tmp.update({
           'keychain': ([[str]]),
