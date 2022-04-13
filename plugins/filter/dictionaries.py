@@ -154,7 +154,7 @@ class GetSubdictFilter(FilterBase):
                " '{}' has type '{}'".format(indict, type(indict))
             )
 
-        defval = self.get_taskparam('keychain')
+        defval = self.get_taskparam('default')
         def_badtype = self.get_taskparam('default_on_type_mismatch')
 
         res = indict
