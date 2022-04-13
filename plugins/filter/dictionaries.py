@@ -16,6 +16,8 @@ from ansible_collections.smabot.base.plugins.module_utils.plugins.plugin_base im
 from ansible_collections.smabot.base.plugins.module_utils.plugins.filter_base import FilterBase
 
 
+DICTKEY_UNSET = object()
+
 
 ##
 ## Converts a dict to a list of key-value strings
@@ -121,6 +123,64 @@ class SubdictFilter(FilterBase):
         return res
 
 
+##
+## Simply walks down from a base dict into a subdict, normally one
+## would simply do "foo.x.y.z" for such cases but this becomes useful
+## when the keychain itself is variable: foo[[x,y,z]]
+##
+##  TODO: is there really nothing builtin in which can do this???
+##
+class GetSubdictFilter(FilterBase):
+
+    FILTER_ID = 'get_subdict'
+
+    @property
+    def argspec(self):
+        tmp = super(SubdictFilter, self).argspec
+
+        tmp.update({
+          'keychain': ([[str]]),
+          'default': ([object], DICTKEY_UNSET),
+          'default_on_type_mismatch': ([bool], False),
+        })
+
+        return tmp
+
+
+    def run_specific(self, indict):
+        if not isinstance(indict, MutableMapping):
+            raise AnsibleOptionsError(
+               "filter input must be a dictionary, but given value"\
+               " '{}' has type '{}'".format(indict, type(indict))
+            )
+
+        defval = self.get_taskparam('keychain')
+        def_badtype = self.get_taskparam('default_on_type_mismatch')
+
+        res = indict
+        kc = []
+        for k in self.get_taskparam('keychain'):
+            if not isinstance(res, [MutableMapping, list]):
+                if def_badtype:
+                    return defval
+
+                raise AnsibleOptionsError(
+                   "Expected collection type item on subpath '{}',"\
+                   " but found value of type '{}': {}".format(
+                      '.'.join(kc), type(res), res
+                   )
+                )
+
+            res = res.get(k, DICTKEY_UNSET)
+            kc.append(k)
+
+            if res == DICTKEY_UNSET:
+                if defval != DICTKEY_UNSET:
+                    return defval
+
+        return res
+
+
 
 # ---- Ansible filters ----
 class FilterModule(object):
@@ -129,7 +189,7 @@ class FilterModule(object):
     def filters(self):
         res = {}
 
-        for f in [KvListFilter, SubdictFilter]:
+        for f in [GetSubdictFilter, KvListFilter, SubdictFilter]:
             res[f.FILTER_ID] = f()
 
         return res
