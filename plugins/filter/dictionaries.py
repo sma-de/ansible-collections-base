@@ -160,7 +160,7 @@ class GetSubdictFilter(FilterBase):
         res = indict
         kc = []
         for k in self.get_taskparam('keychain'):
-            if not isinstance(res, [MutableMapping, list]):
+            if not isinstance(res, (MutableMapping, list)):
                 if def_badtype:
                     return defval
 
