@@ -393,3 +393,15 @@ class AnsSpaceAndArgsPlugin(ArgsPlugin):
 
         return facts
 
+
+    def get_target_python_interpreter_infos(self):
+        pyfacts = self.get_ansible_fact('python')
+        tmp = self.get_ansible_var('ansible_python_interpreter', default=None)
+
+        if tmp and pyfacts['executable'] != tmp:
+            # ansible_python_interpreter is not set on default,
+            # but when it is set it has priority
+            return {'executable': tmp}
+
+        return pyfacts
+

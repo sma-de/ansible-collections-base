@@ -116,9 +116,8 @@ class PipOptsNormer(NormalizerBase):
         venv_cmd = my_subcfg['virtualenv_command']
 
         if not venv_cmd:
-            defpy = self.pluginref.get_ansible_var(
-              'ansible_python_interpreter'
-            )
+            defpy = self.pluginref.get_target_python_interpreter_infos()
+            defpy = defpy['executable']
 
             venv_cmd = "{} -m venv".format(defpy)
             my_subcfg['virtualenv_command'] = venv_cmd

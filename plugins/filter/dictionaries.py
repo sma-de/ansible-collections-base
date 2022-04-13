@@ -7,6 +7,8 @@ ANSIBLE_METADATA = {
 }
 
 
+import copy
+
 from ansible.errors import AnsibleFilterError, AnsibleOptionsError
 from ansible.module_utils.six import iteritems, string_types
 from ansible.module_utils.common._collections_compat import MutableMapping
@@ -16,7 +18,7 @@ from ansible_collections.smabot.base.plugins.module_utils.plugins.plugin_base im
 from ansible_collections.smabot.base.plugins.module_utils.plugins.filter_base import FilterBase
 
 
-DICTKEY_UNSET = object()
+DICTKEY_UNSET = '----||!!unset!!||----'
 
 
 ##
@@ -188,6 +190,18 @@ class GetSubdictFilter(FilterBase):
         return res
 
 
+##
+## simply make a deep copy of given input
+##
+class DeepCopyFilter(FilterBase):
+
+    FILTER_ID = 'deepcopy'
+
+
+    def run_specific(self, inval):
+        return copy.deepcopy(inval)
+
+
 
 # ---- Ansible filters ----
 class FilterModule(object):
@@ -196,7 +210,7 @@ class FilterModule(object):
     def filters(self):
         res = {}
 
-        for f in [GetSubdictFilter, KvListFilter, SubdictFilter]:
+        for f in [DeepCopyFilter, GetSubdictFilter, KvListFilter, SubdictFilter]:
             res[f.FILTER_ID] = f()
 
         return res
