@@ -75,8 +75,16 @@ def default_param_value(pname, defcfg, ans_varspace, templater):
 
 
 def check_paramtype(param, value, typespec, errmsg):
+    display.vvv(
+      "[PLUGIN] :: handle args, check param type: {}".format(typespec)
+    )
+
     if typespec == []:
         # no type restriction ==> noop
+        display.vvv(
+          "[PLUGIN] :: handle args, check param type, no restriction => early return"
+        )
+
         return
 
     if callable(typespec):
@@ -96,8 +104,8 @@ def check_paramtype(param, value, typespec, errmsg):
         sub_types = None
 
         if isinstance(xt, list):
-            xt = list
             sub_types = xt
+            xt = list
 
         if isinstance(value, xt):
             type_match = True
@@ -112,13 +120,17 @@ def check_paramtype(param, value, typespec, errmsg):
         )
 
     if isinstance(value, list):
-        ansible_assert(sub_types, 'bad typespec')
+        ansible_assert(sub_types is not None, 'bad typespec')
 
         display.vvv(
           "[PLUGIN] :: handle args, do subtype check: {}".format(sub_types)
         )
 
         for vx in value:
+            display.vvv(
+              "[PLUGIN] :: subtype check for value: |{}|".format(vx)
+            )
+
             check_paramtype(param, vx, sub_types, errmsg)
 
 

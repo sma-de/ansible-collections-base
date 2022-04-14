@@ -75,6 +75,55 @@ class VersionSortFilter(FilterBase):
 
 
 
+class ListAddFilter(FilterBase):
+
+    FILTER_ID = 'listadd'
+
+    @property
+    def argspec(self):
+        tmp = super(ListAddFilter, self).argspec
+
+        tmp.update({
+          'lists': ([[]]),
+          'optional': ([bool], True),
+          'split': (list(string_types), ''),
+        })
+
+        return tmp
+
+
+    def run_specific(self, value):
+        if not isinstance(value, list):
+            raise AnsibleOptionsError(
+               "input value must be a list, but is of"\
+               " type '{}'".format(type(value))
+            )
+
+        splitter = self.get_taskparam('split')
+
+        for l in self.get_taskparam('lists'):
+            if not l:
+                ansible_assert(self.get_taskparam('optional'),
+                  "Mandatory list to add is empty/none"
+                )
+
+                # ignore unset optional list
+                continue
+
+            if isinstance(l, string_types):
+                ansible_assert(splitter,
+                   "list to add is a string (=> '{}'), but no splitter"\
+                   " was defined, set it like this: split=':'".format(l)
+                )
+
+                l = re.split(splitter, l)
+
+            value += l
+
+        return value
+
+
+
 # ---- Ansible filters ----
 class FilterModule(object):
     ''' file path related filters '''
@@ -82,7 +131,7 @@ class FilterModule(object):
     def filters(self):
         res = {}
 
-        for f in [VersionSortFilter]:
+        for f in [ListAddFilter, VersionSortFilter]:
             res[f.FILTER_ID] = f()
 
         return res
