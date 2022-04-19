@@ -94,12 +94,19 @@ def handle_map_inheritance(
     pf_keys = kwargs.get('active_dyn_profiles', None)
     pf_maps = mapping.get('_dynamic_profiles', None)
 
-    if pf_keys and pf_maps:
+    # note: totally possible we merged more than once during
+    #   a run, but we want to merge dynamic profiles just once,
+    #   to ensure this we safe a flag inside the mapping
+    dpf_done = mapping.get('_dynprofiles_handled', False)
+
+    if pf_keys and pf_maps and not dpf_done:
         for k in pf_keys:
             tmp = pf_maps.get(k, None)
 
             if tmp:
                 merge_dicts(mapping, tmp)
+
+        mapping['_dynprofiles_handled'] = True
 
     # check if we need to recurse
     recurse = []
