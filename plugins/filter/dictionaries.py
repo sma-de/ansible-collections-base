@@ -147,7 +147,7 @@ class GetSubdictFilter(FilterBase):
         tmp = super(GetSubdictFilter, self).argspec
 
         tmp.update({
-          'keychain': ([[str]]),
+          'keychain': ([list(string_types) + [str]]),
           'default': ([object], DICTKEY_UNSET),
           'default_on_type_mismatch': ([bool], False),
         })
@@ -167,7 +167,14 @@ class GetSubdictFilter(FilterBase):
 
         res = indict
         kc = []
-        for k in self.get_taskparam('keychain'):
+
+        tmp = self.get_taskparam('keychain')
+
+        if isinstance(tmp, string_types):
+            # expects standard ansible dot separated key path: foo.bar.baz
+            tmp = tmp.split('.')
+
+        for k in tmp:
             if not isinstance(res, (MutableMapping, list)):
                 if def_badtype:
                     return defval
