@@ -147,7 +147,7 @@ class GetSubdictFilter(FilterBase):
         tmp = super(GetSubdictFilter, self).argspec
 
         tmp.update({
-          'keychain': ([list(string_types) + [str]]),
+          'keychain': ([]), # expect either a string keychain: "foo.bar.baz" or as list: ['foo', 'bar', 'baz']
           'default': ([object], DICTKEY_UNSET),
           'default_on_type_mismatch': ([bool], False),
         })
