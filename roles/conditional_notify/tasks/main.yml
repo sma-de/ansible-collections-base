@@ -11,7 +11,7 @@
     # note: as ansible seems not to support either a 
     #   notify-on-condition, nor does it accept a 
     #   notify-only task, we need some harmless 
-    #   cheap dummy action here, whoami seems fine
+    #   cheap dummy action here, debug text seems fine
   - name: >-
        {{ conditional_notify_args.taskname 
         | default('notify listeners', True) }}

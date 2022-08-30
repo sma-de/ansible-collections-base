@@ -1,0 +1,9 @@
+---
+
+    ##
+    ## note: make it possible to "call this role" as handler
+    ##
+  - ansible.builtin.include_tasks: >-
+      {{ role_path }}/tasks/main.yml
+    listen: "wait until webservice is ready"
+

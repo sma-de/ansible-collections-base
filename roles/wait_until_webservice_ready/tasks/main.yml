@@ -1,0 +1,40 @@
+---
+
+##
+## very basic tests which simply checks that querying the
+## url returns a "success" http code (default: only 200)
+##
+
+##
+## smabot_base_wait_until_webservice_ready_args:
+##   taskname: ## optional
+##   config:
+##     url: ## mandatory
+##     # optionally any other uri param can be set here to customize checking routine
+#
+##   retries: ## optional, default value 20, with default delay this results in a default timeout of 5min
+##   delay: ## time to wait between retries (in seconds), optional, defaults to 15
+##
+
+  - name: >-
+      {{
+         smabot_base_wait_until_webservice_ready_args.taskname
+         | default("querying url '{}' until webservice is ready".format(
+             smabot_base_wait_until_webservice_ready_args.config.url
+           ), True)
+      }}
+
+    ansible.builtin.uri: "{{ smabot_base_wait_until_webservice_ready_args.config }}"
+
+    ##
+    ## note: this can and will obviously fail when the service is
+    ##   currently booting up, this can be nicely handled with
+    ##   the ansible "until not failed" pattern which is basically
+    ##   looping the this task again and again until it stops
+    ##   failing or the specified retries are up
+    ##
+    register: _tmp_query_url
+    until: _tmp_query_url is not failed
+    retries: "{{ smabot_base_wait_until_webservice_ready_args.retries | default(20, True) }}"
+    delay: "{{ smabot_base_wait_until_webservice_ready_args.delay | default(15, True) }}"
+
