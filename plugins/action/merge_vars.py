@@ -150,12 +150,15 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
         if not defaults:
             return mapping  ## noop
 
+        ##display.vvv("merge: defaulting: mapping pre default merge:\n{}".format(mapping))
+
         merge_dicts(mapping, copy.deepcopy(defaults),
           # obviously an explicitly set value has higher
           # prio than its default(s)
           strats_fallback=['use_existing']
         )
 
+        ##display.vvv("merge: defaulting: mapping post default merge:\n{}".format(mapping))
         ignore_subkeys = [defaultkey]
 
     merge_all = None
@@ -173,6 +176,7 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
 
             if tmp:
                 merge_all.append(tmp)
+                ##display.vvv("merge: defaulting: found magic all key:\n{}".format(tmp))
 
         for k in list(mapping.keys()):
             tmp = re.match(r'\{\?\s*(\S.*\S)\s*\?\}', k)
@@ -192,10 +196,16 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
             continue
 
         ismap = False
+        v_replace = False
 
         if parent_ismap:
             # for mapping, 'v' was key until now, but we need only value here
             v = mapping[v]
+
+            # TODO: support v-replace for lists
+            if v is None and (merge_all or regex_mergers):
+                v = {}
+                v_replace = True
 
         ## TODO: also merge to sublists???
         if isinstance(v, collections.abc.Mapping):
@@ -204,6 +214,8 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
             if merge_all:
                 for ma in merge_all:
                     merge_dicts(tmp, ma)
+
+                #display.vvv("merge: defaulting: all defaults merged together:\n{}".format(tmp))
 
             for (rm, rv) in iteritems(regex_mergers):
                 display.vvv(
@@ -221,13 +233,19 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
                     merge_dicts(tmp, rv)
 
             if tmp:
-                merge_dicts(v, tmp,
+                ##display.vvv("merge: defaulting: merge v:\n{}".format(v))
+                ##display.vvv("merge: defaulting: merge defaults:\n{}".format(tmp))
+
+                merge_dicts(v, copy.deepcopy(tmp),
                   # obviously an explicitly set value has higher
                   # prio than its default(s)
                   strats_fallback=['use_existing']
                 )
 
             ismap = True
+
+        if v_replace and v:
+            mapping[k] = v
 
         if ismap or isinstance(v, list):
             recursive_defaulting(v, defaultkey, rootlvl=False)
