@@ -211,7 +211,7 @@ def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
     for k in nextkeys:
         tmp = d.get(k, None)
 
-        if tmp:
+        if tmp is not None:
             if not isinstance(tmp, collections.abc.Mapping):
                 ansible_assert(kwargs.get('allow_nondict_leaves', False),
                   "invalid subdicts keychain {}, child element of key"
