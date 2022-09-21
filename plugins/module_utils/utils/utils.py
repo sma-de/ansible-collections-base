@@ -20,6 +20,13 @@ from ansible.module_utils.six import string_types
 ##LAZYTEMPLATE_END = '!}'
 
 
+## TODO: complete list
+ANSRET_DEFFIELDS = [
+  'changed',
+  'invocation',
+]
+
+
 def ansible_assert(condition, error_msg):
     if not condition:
         raise AnsibleAssertionError(error_msg)
@@ -55,4 +62,19 @@ def detemplate(val, templater):
         return template_recursive(val, templater)
 
     return val
+
+
+##
+## expects a dict like returned by an ansible module and removes ansible standard fields like changed from it
+##
+def remove_ansible_defret_vals(retmap):
+    ansdef = {}
+
+    for x in ANSRET_DEFFIELDS:
+        if x not in retmap:
+            continue
+
+        ansdef[x] = retmap.pop(x)
+
+    return (retmap, ansdef)
 
