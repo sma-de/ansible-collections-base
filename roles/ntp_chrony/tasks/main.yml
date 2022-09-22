@@ -1,0 +1,72 @@
+---
+
+##
+## role which enables/denables ntp based on chrony
+##
+## smabot_base_ntp_chrony_args:
+##
+##  # activate this ntp service using default settings
+##  ntp: true # default, means using ntp is managed by this role with default settings
+##
+##  # disable/remove this ntp service
+##  ntp: false # dont manage ntp by this role, some other role (custom) role will do it
+##
+##  # activate this ntp service with custom settings
+##  ntp:
+##    ##base_template: # file path to a file template to use as base for config file, on default uses standard config which is contained in this role
+##    sources:
+##      servers: # map of servers to use, optional
+##        ntp.sma.de: # use server ip/name as key (on default)
+##          name: # defaults to key
+##          config: # server chrony config options, like iburst, optional
+##
+##      pools: # map of pools to use, optional
+##
+
+  - smabot.base.normalize_ntp_chrony_args:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_ntp_chrony_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+
+
+  - name: assure necessary os packages are (de-) installed
+    ansible.builtin.package: >-
+      {{ smabot_base_ntp_chrony_args_normed._module_cfgs.os_packages }}
+
+
+  - name: assure conflicting systemd time service is disabled
+    ansible.builtin.service:
+      name: systemd-timesyncd.service
+      state: stopped
+      enabled: no
+    when: smabot_base_ntp_chrony_args_normed.ntp.enabled
+
+
+  - name: make sure service is active (or not)
+    ansible.builtin.service: >-
+      {{ smabot_base_ntp_chrony_args_normed._module_cfgs.service }}
+    when: smabot_base_ntp_chrony_args_normed.ntp.enabled
+
+
+  - name: create chrony ntp config
+    ansible.builtin.template:
+      src: "{{ smabot_base_ntp_chrony_args_normed.ntp.base_template }}"
+      dest: /etc/chrony/chrony.conf
+    notify: "restart ntp daemon"
+    when: smabot_base_ntp_chrony_args_normed.ntp.enabled
+
+
+  - name: handle ntp sources
+    ansible.builtin.copy:
+      content: "{{ smabot_base_ntp_chrony_args_normed.ntp.sources._export }}"
+      dest: "{{ smabot_base_ntp_chrony_args_normed.ntp.sources.cfgpath }}"
+    notify: "restart ntp daemon"
+    when: smabot_base_ntp_chrony_args_normed.ntp.enabled
+
+  - name: remove ntp source file
+    ansible.builtin.file:
+      path: "{{ smabot_base_ntp_chrony_args_normed.ntp.sources.cfgpath }}"
+      state: absent
+    when: not smabot_base_ntp_chrony_args_normed.ntp.enabled
+
