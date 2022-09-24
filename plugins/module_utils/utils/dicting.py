@@ -192,19 +192,22 @@ def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
         yield (d, kcout)
         return
 
-    if not kciter:
+    if kciter is None:
         kcout = []
-        yield from get_subdicts(d, keychain, iter(keychain), kcout, **kwargs)
+        yield from get_subdicts(d, keychain,
+          keychain[:], kcout, **kwargs
+        )
+
         return
 
-    nextkeys = next(kciter, None)
-
-    if not nextkeys:
+    if not kciter:
         yield (d, kcout)
         return
 
+    nextkeys = kciter.pop(0)
+
     if nextkeys == SUBDICT_METAKEY_ANY:
-        nextkeys = d.keys()
+        nextkeys = list(d.keys())
     else:
         nextkeys = [nextkeys]
 
@@ -232,8 +235,8 @@ def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
                " subkey '{}'".format(keychain, k)
             )
 
-        yield from get_subdicts(
-          tmp, keychain, kciter, kcout[:] + [k], **kwargs
+        yield from get_subdicts(tmp,
+          keychain, kciter[:], kcout[:] + [k], **kwargs
         )
 
 

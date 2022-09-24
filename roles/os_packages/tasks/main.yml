@@ -1,0 +1,38 @@
+---
+
+##
+## role which abstracts distro specifica for standard os package installs
+##
+## smabot_base_os_packages_args:
+##
+##  packages: # mandatory
+##
+##    # this is used when no direct match for current distro is found
+##    default: # optional when distro specific key is used
+##      <pack-name>:
+##         name: # defaults to map key
+##         config: # optional
+##           state: # optional, defaults to latest
+##
+##    # must be == ansible_distribution.lower()
+##    <distro-id>: # optional when default is set
+##
+##    <distro-id>+: # use default as base, but add these when current distro is this one
+##    <distro-id>-: # use default as base, but remove these when current distro is this one
+##
+
+
+  - smabot.base.normalize_os_package_args:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_os_packages_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+
+
+  - name: assure necessary os packages are (de-) installed
+    ansible.builtin.package: "{{ _iter_packs }}"
+    loop: >-
+      {{ smabot_base_os_packages_args_normed.packages._install_groups }}
+    loop_control:
+      loop_var: _iter_packs
+
