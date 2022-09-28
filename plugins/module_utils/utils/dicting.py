@@ -195,7 +195,7 @@ def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
     if kciter is None:
         kcout = []
         yield from get_subdicts(d, keychain,
-          keychain[:], kcout, **kwargs
+          list(keychain[:]), kcout, **kwargs
         )
 
         return
