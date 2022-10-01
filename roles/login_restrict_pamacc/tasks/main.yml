@@ -1,0 +1,56 @@
+---
+
+##
+## smabot_base_login_restrict_pamacc_args:
+##
+##   # enabled do restrict, if false, remove all restrictions
+##   enabled: # optional, defaults to true
+##
+##   pam_rules: # optional
+##     pamfile: # optional, defaults probably to 'system-auth', but can vary depending on distro
+##
+##     # existing rule where to put our rules below
+##     prerule: # optional, probable default see below, but might vary depending on distro
+##       config:
+##         type: auth
+##         control: requisite
+##         module_path: pam_deny.so
+##
+##   # if restrictions should also apply to local users or not
+##   local_users: # optional, defaults to true
+##
+##   allow: # optional
+##
+##     users:
+##       <username>:
+##         domain: # optional domain for domain users
+##
+##     groups:
+##       <grpname>:
+##         domain: # optional domain for domain groups
+##     
+##   deny: # optional
+##
+
+  - smabot.base.normalize_login_restrict_pamacc_args:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_login_restrict_pamacc_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+      _tmp_smabot_pamcfg: "{{ _tmp_normed_cfg.normalized }}"
+
+
+  - ansible.builtin.include_tasks: "{{ role_path }}/../login_restrict_pamlist/tasks/tasks.yml"
+
+
+  ##
+  ## note: as we atm can only handle group based access properly
+  ##   for all cases we use / forward to pamlist based access control for users
+  ##
+  - name: handle user based login restrictions
+    ansible.builtin.include_role:
+      name: smabot.base.login_restrict_pamlist
+    vars:
+      smabot_base_login_restrict_pamlist_args: >-
+        {{ smabot_base_login_restrict_pamacc_args_normed._exports.pam_lists_users }}
+

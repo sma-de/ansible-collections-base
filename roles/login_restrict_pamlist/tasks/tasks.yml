@@ -1,0 +1,35 @@
+---
+
+  - name: assure pam config dir(s) exist  ==>>  {{ _iter_pamconf_files.config.dest | dirname }}
+    ansible.builtin.file:
+      dest: "{{ _iter_pamconf_files.config.dest | dirname }}"
+      state: directory
+    loop: >-
+      {{ _tmp_smabot_pamcfg._exports.pam_cfgfiles_present }}
+    loop_control:
+      loop_var: _iter_pamconf_files
+
+
+  - name: create pam access conf restriction file  ==>>  {{ _iter_pamconf_files.config.dest }}
+    ansible.builtin.copy: "{{ _iter_pamconf_files.config }}"
+    loop: >-
+      {{ _tmp_smabot_pamcfg._exports.pam_cfgfiles_present }}
+    loop_control:
+      loop_var: _iter_pamconf_files
+
+
+  - name: remove pam access conf restriction file  ==>>  {{ _iter_pamconf_files.config.dest }}
+    ansible.builtin.file: "{{ _iter_pamconf_files.config }}"
+    loop: >-
+      {{ _tmp_smabot_pamcfg._exports.pam_cfgfiles_absent }}
+    loop_control:
+      loop_var: _iter_pamconf_files
+
+
+  - name: create or remove pam rule
+    community.general.pamd: "{{ _iter_pamrules }}"
+    loop: >-
+      {{ _tmp_smabot_pamcfg._exports.pam_rules }}
+    loop_control:
+      loop_var: _iter_pamrules
+

@@ -1,0 +1,44 @@
+---
+
+##
+## smabot_base_login_restrict_pamlist_args:
+##
+##   # enabled do restrict, if false, remove all restrictions
+##   enabled: # optional, defaults to true
+##
+##   pam_rules: # optional
+##     pamfile: # optional, defaults probably to 'system-auth', but can vary depending on distro
+##
+##     # existing rule where to put our rules below
+##     prerule: # optional, probable default see below, but might vary depending on distro
+##       config:
+##         type: auth
+##         control: requisite
+##         module_path: pam_deny.so
+##
+##   # if restrictions should also apply to local users or not
+##   local_users: # optional, defaults to true
+##
+##   allow: # optional
+##
+##     users:
+##       <username>:
+##         domain: # optional domain for domain users
+##
+##     # TODO: atm not supported: recommended ot use pamaccess for groups instead
+##     groups:
+##       <grpname>:
+##         domain: # optional domain for domain groups
+##
+##   deny: # optional
+##
+
+  - smabot.base.normalize_login_restrict_pamlist_args:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_login_restrict_pamlist_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+      _tmp_smabot_pamcfg: "{{ _tmp_normed_cfg.normalized }}"
+
+  - ansible.builtin.include_tasks: tasks.yml
+
