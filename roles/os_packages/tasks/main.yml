@@ -29,10 +29,20 @@
       smabot_base_os_packages_args_normed: "{{ _tmp_normed_cfg.normalized }}"
 
 
-  - name: assure necessary os packages are (de-) installed
+  - name: assure necessary os packages are (de-) installed (apt)
+    ansible.builtin.apt: "{{ _iter_packs }}"
+    loop: >-
+      {{ smabot_base_os_packages_args_normed.packages._install_groups }}
+    loop_control:
+      loop_var: _iter_packs
+    when: smabot_base_os_packages_args_normed.package_manager.type == 'apt'
+
+
+  - name: assure necessary os packages are (de-) installed (generic fallback)
     ansible.builtin.package: "{{ _iter_packs }}"
     loop: >-
       {{ smabot_base_os_packages_args_normed.packages._install_groups }}
     loop_control:
       loop_var: _iter_packs
+    when: smabot_base_os_packages_args_normed.package_manager.type == 'generic'
 

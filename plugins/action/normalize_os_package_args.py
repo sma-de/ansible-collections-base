@@ -21,10 +21,78 @@ class ConfigRootNormalizer(NormalizerBase):
     def __init__(self, pluginref, *args, **kwargs):
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
+          PackageManagerNormer(pluginref),
           AllPackagesNormer(pluginref),
         ]
 
         super(ConfigRootNormalizer, self).__init__(pluginref, *args, **kwargs)
+
+
+    def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
+        distro = setdefault_none(my_subcfg, 'distro',
+           self.pluginref.get_ansible_var('ansible_distribution').lower()
+        )
+
+        my_subcfg['distro'] = distro.lower()
+        return my_subcfg
+
+
+class PackageManagerNormer(NormalizerBase):
+
+    DEFAULT_PACKMAN_OVERWRITES = {
+      'ubuntu': 'apt',
+      'debian': 'apt',
+    }
+
+    def __init__(self, pluginref, *args, **kwargs):
+        subnorms = kwargs.setdefault('sub_normalizers', [])
+        subnorms += [
+          PackManAptOptsNormer(pluginref),
+        ]
+
+        super(PackageManagerNormer, self).__init__(
+           pluginref, *args, **kwargs
+        )
+
+    @property
+    def config_path(self):
+        return ['package_manager']
+
+    def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
+        pcfg = self.get_parentcfg(cfg, cfgpath_abs)
+        distro = pcfg['distro']
+
+        pmtype = setdefault_none(my_subcfg, 'type',
+          self.DEFAULT_PACKMAN_OVERWRITES.get(distro, 'generic')
+        )
+
+        return my_subcfg
+
+    def _handle_specifics_postsub(self, cfg, my_subcfg, cfgpath_abs):
+        pm_opts = my_subcfg.get('opts', {}).get(my_subcfg['type'], None)
+        my_subcfg['_config'] = pm_opts or {}
+
+        return my_subcfg
+
+
+class PackManAptOptsNormer(NormalizerBase):
+
+    def __init__(self, pluginref, *args, **kwargs):
+        self._add_defaultsetter(kwargs,
+          'update_cache', DefaultSetterConstant(True)
+        )
+
+        self._add_defaultsetter(kwargs,
+          'install_recommends', DefaultSetterConstant(False)
+        )
+
+        super(PackManAptOptsNormer, self).__init__(
+           pluginref, *args, **kwargs
+        )
+
+    @property
+    def config_path(self):
+        return ['opts', 'apt']
 
 
 ## TODO: support different install opts for packages
@@ -45,8 +113,8 @@ class AllPackagesNormer(NormalizerBase):
         return ['packages']
 
     def _handle_specifics_postsub(self, cfg, my_subcfg, cfgpath_abs):
-        # TODO: optionally allow to force set a sepcific distro
-        distro = self.pluginref.get_ansible_var('ansible_distribution').lower()
+        pcfg = self.get_parentcfg(cfg, cfgpath_abs)
+        distro = pcfg['distro']
         distro_replace = True
         cur_packlist = my_subcfg.get(distro, None)
 
@@ -98,7 +166,11 @@ class AllPackagesNormer(NormalizerBase):
         tmp = {}
 
         for k,v in cur_packlist.items():
-            vc = v['config']
+            ## as base use package manager options
+            vc = copy.deepcopy(pcfg['package_manager']['_config'])
+
+            merge_dicts(vc, v['config'])
+
             t2 = tmp.setdefault(vc['state'], None)
 
             if not t2:
