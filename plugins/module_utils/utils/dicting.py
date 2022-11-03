@@ -27,6 +27,9 @@ SELFREF_START = '{:'
 SELFREF_END = ':}'
 
 
+MAPKEY_UNSET = object()
+
+
 ## TODO: support other merge strats, make them settable by caller??
 def merge_dicts(da, db, strats_fallback=None):
     ''' TODO '''
@@ -184,8 +187,8 @@ def get_subdict(d, keychain, **kwargs):
 
 def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
     ansible_assert(isinstance(d, collections.abc.Mapping), 
-        "invalid input param d for keychain {}, it must be a mapping,"\
-      + " but was of type '{}': {}".format(keychain, type(d), d)
+       "invalid input param d for keychain {}, it must be a mapping,"\
+       " but was of type '{}': {}".format(keychain, type(d), d)
     )
 
     if not keychain:
@@ -212,28 +215,40 @@ def get_subdicts(d, keychain, kciter=None, kcout=None, **kwargs):
         nextkeys = [nextkeys]
 
     for k in nextkeys:
-        tmp = d.get(k, None)
+        tmp = d.get(k, MAPKEY_UNSET)
+        key_empty = False
 
-        if tmp is not None:
-            if not isinstance(tmp, collections.abc.Mapping):
-                ansible_assert(kwargs.get('allow_nondict_leaves', False),
-                  "invalid subdicts keychain {}, child element of key"
-                  " '{}' is not a dictionary: {}".format(keychain, k, tmp)
-                )
+        if tmp is MAPKEY_UNSET:
+            key_empty = True
+        else:
+            key_empty = tmp in (kwargs.get('empty_vals', [None]) or [])
 
-                yield (tmp, kcout[:] + [k])
+        if key_empty:
+
+            if kwargs.get('default_empty', False):
+                tmp = kwargs.get('default_value', {})
+
+                if kwargs.get('default_update', True):
+                    d[k] = tmp
+
+            elif kwargs.get('ignore_empty', False):
                 continue
 
-        elif kwargs.get('default_empty', False):
-            tmp = {}
-            d[k] = tmp
-        elif kwargs.get('ignore_empty', False):
-            continue
-        else:
-            raise KeyError(
-               "invalid keychain {}, could not find"
-               " subkey '{}'".format(keychain, k)
+            else:
+                raise KeyError(
+                   "invalid keychain {}, could not find"
+                   " subkey '{}'".format(keychain, k)
+                )
+
+        if not isinstance(tmp, collections.abc.Mapping):
+            ansible_assert(kwargs.get('allow_nondict_leaves', False),
+              "invalid subdicts keychain {}, child element of key"
+              " '{}' is not a dictionary: {}".format(keychain, k, tmp)
             )
+
+            yield (tmp, kcout[:] + [k])
+            continue
+
 
         yield from get_subdicts(tmp,
           keychain, kciter[:], kcout[:] + [k], **kwargs

@@ -233,16 +233,15 @@ class NormalizerBase(abc.ABC):
                 # or a tuple for a lazy initialized normer
                 normtype, lazy = sn
 
-                ##print("{}: subcfg => {}".format(self.config_path, my_subcfg))
+                tmp = list(get_subdicts(my_subcfg, normtype.NORMER_CONFIG_PATH,
+                  ignore_empty=True, empty_vals=None,
+                  allow_nondict_leaves=True
+                ))
 
-                tmp = get_subdicts(my_subcfg, normtype.NORMER_CONFIG_PATH, 
-                   ignore_empty=True, allow_nondict_leaves=True
-                )
-
-                if any(map(lambda x: x[0], tmp)):
-                    sn = normtype(self.pluginref)
-                else:
+                if not tmp:
                     continue
+
+                sn = normtype(self.pluginref)
 
             sn(my_subcfg, cfg, cfgpath_abs)
 
@@ -312,17 +311,18 @@ class NormalizerBase(abc.ABC):
 
         display.vvv("Normalize config path: {}".format(cfgpath_abs))
         display.vvv("Normalize config path: {}".format(cfgpath))
+        #display.vvv("Normalize config path{}: {}".format(cfgpath, config))
 
         ## note: we cannot iterate "inplace" here, as we also modify 
         ##   the dict inside the loop, we solve this by tmp saving 
         ##   iterator first as list
         sub_dicts = list(get_subdicts(config, cfgpath,
-            default_empty=True, allow_nondict_leaves=True
+           default_empty=True, allow_nondict_leaves=True
         ))
 
         for (subcfg, subpath) in sub_dicts:
 
-            #display.vvv("Handle matching subpath: {}".format(subpath))
+            #display.vvv("Handle matching subpath['{}']: {}".format(subpath, subcfg))
 
             sp_abs = cfgpath_abs[:]
 
