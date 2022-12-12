@@ -317,7 +317,7 @@ class NormalizerBase(abc.ABC):
         ##   the dict inside the loop, we solve this by tmp saving 
         ##   iterator first as list
         sub_dicts = list(get_subdicts(config, cfgpath,
-           default_empty=True, allow_nondict_leaves=True
+          default_empty=True, allow_nondict_leaves=True
         ))
 
         for (subcfg, subpath) in sub_dicts:

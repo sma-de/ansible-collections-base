@@ -22,6 +22,89 @@ DICTKEY_UNSET = '----||!!unset!!||----'
 
 
 ##
+## Selects keys/values from dicts depending on given options
+##
+class MapSelectFilter(FilterBase):
+
+    FILTER_ID = 'map_select'
+
+    @property
+    def argspec(self):
+        tmp = super(MapSelectFilter, self).argspec
+
+        tmp.update({
+          'single': ([bool] + list(string_types), False),
+          'key': ([bool], True),
+          'value': ([bool], True),
+        })
+
+        return tmp
+
+
+    def run_specific(self, indict):
+        if not isinstance(indict, MutableMapping):
+            raise AnsibleOptionsError(
+               "filter input must be a dictionary, but given value"\
+               " '{}' has type '{}'".format(indict, type(indict))
+            )
+
+        res = []
+
+        keep_keys = self.get_taskparam('key')
+        keep_values = self.get_taskparam('value')
+
+        single = self.get_taskparam('single')
+        single_idx = None
+        i = 0
+
+        for k,v in indict.items():
+            if keep_keys and keep_values:
+                v = {'key': k, 'value': v}
+            elif keep_keys:
+                v = k
+            elif not keep_values:
+                raise AnsibleFilterError(
+                  "According to given options neither keys nor values"\
+                  " should be kept, this doesn't make sense"
+                )
+
+            res.append(v)
+
+            ## single can optionally be a string key to return as single
+            if not isinstance(single, bool) and single == k:
+                single_idx = i
+                break
+
+            i += 1
+
+        if single and res:
+            if isinstance(single, bool):
+                if len(res) > 1:
+                    raise AnsibleOptionsError(
+                       "Requested default 'single' return but given input"\
+                       " dict has more than one key (=> {}). Either make"\
+                       " sure filter input contains just a single element"\
+                       " or alternatively explicitly name the key to"\
+                       " use: {}".format(len(res), list(indict.keys()))
+                    )
+
+                res = res[0]
+            else:
+                if single_idx is None:
+                    raise AnsibleOptionsError(
+                       "Explicitly requested to return single item for"\
+                       " key '{}' but this key could not be found in"\
+                       " given input dict: {}".format(
+                           single, list(indict.keys())
+                       )
+                    )
+
+                res = res[single_idx]
+
+        return res
+
+
+##
 ## Converts a dict to a list of key-value strings
 ##
 class KvListFilter(FilterBase):
@@ -227,7 +310,8 @@ class FilterModule(object):
           DeepCopyFilter,
           GetSubdictFilter,
           KvListFilter,
-          SubdictFilter
+          MapSelectFilter,
+          SubdictFilter,
         ]
 
         for f in tmp:

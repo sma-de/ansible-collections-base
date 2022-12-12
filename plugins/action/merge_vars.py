@@ -152,11 +152,11 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
 
         ##display.vvv("merge: defaulting: mapping pre default merge:\n{}".format(mapping))
 
-        merge_dicts(mapping, copy.deepcopy(defaults),
-          # obviously an explicitly set value has higher
-          # prio than its default(s)
-          strats_fallback=['use_existing']
-        )
+        merge_dicts(mapping, copy.deepcopy(defaults), copy.deepcopy(mapping))
+        ##  # obviously an explicitly set value has higher
+        ##  # prio than its default(s)
+        ##  strats_fallback=['use_existing'] <-- DOES NOT WORK LIKE IT SHOULD!
+        ##)
 
         ##display.vvv("merge: defaulting: mapping post default merge:\n{}".format(mapping))
         ignore_subkeys = [defaultkey]
@@ -236,11 +236,17 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
                 ##display.vvv("merge: defaulting: merge v:\n{}".format(v))
                 ##display.vvv("merge: defaulting: merge defaults:\n{}".format(tmp))
 
-                merge_dicts(v, copy.deepcopy(tmp),
-                  # obviously an explicitly set value has higher
-                  # prio than its default(s)
-                  strats_fallback=['use_existing']
-                )
+                tmp = copy.deepcopy(tmp)
+                merge_dicts(tmp, v)
+                ##  # obviously an explicitly set value has higher
+                ##  # prio than its default(s)
+                ##  strats_fallback=['use_existing'] <-- DOES NOT WORK LIKE IT SHOULD
+                ##)
+
+                v = tmp
+                v_replace = True
+
+                ##display.vvv("merge: defaulting: post merge:\n{}".format(v))
 
             ismap = True
 
