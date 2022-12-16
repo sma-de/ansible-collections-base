@@ -16,3 +16,9 @@
     loop_control:
       loop_var: _iter_dircfg_top
 
+
+  - name: mark current dir as already expanded
+    set_fact:
+      smabot_base_vardirs_expanded: >-
+        {{ smabot_base_vardirs_expanded | combine({_iter_vardirs: True}) }}
+

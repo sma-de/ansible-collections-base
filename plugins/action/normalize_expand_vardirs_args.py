@@ -53,7 +53,19 @@ class ExpandVarDirsNormalizer(NormalizerBase):
             if tmp['stat']['exists'] and tmp['stat']['isdir']:
                 reslist.append(d)
 
+        # filter out dirs, which are already expanded
+        pre_expanded = self.pluginref.get_ansible_var('smabot_base_vardirs_expanded')
+
+        tmplist = []
+        for d in reslist:
+            if pre_expanded.get(d, False):
+                continue
+
+            tmplist.append(d)
+
+        reslist = tmplist
         my_subcfg['_dirlist'] = reslist
+
         return my_subcfg
 
 
