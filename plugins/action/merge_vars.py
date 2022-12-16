@@ -152,11 +152,14 @@ def recursive_defaulting(mapping, defaultkey, rootlvl=True):
 
         ##display.vvv("merge: defaulting: mapping pre default merge:\n{}".format(mapping))
 
-        merge_dicts(mapping, copy.deepcopy(defaults), copy.deepcopy(mapping))
+        tmp = merge_dicts(copy.deepcopy(defaults), mapping)
         ##  # obviously an explicitly set value has higher
         ##  # prio than its default(s)
         ##  strats_fallback=['use_existing'] <-- DOES NOT WORK LIKE IT SHOULD!
         ##)
+
+        mapping.clear()
+        mapping.update(tmp)
 
         ##display.vvv("merge: defaulting: mapping post default merge:\n{}".format(mapping))
         ignore_subkeys = [defaultkey]
