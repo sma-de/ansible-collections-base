@@ -57,6 +57,16 @@ class DefaultSetterBase(abc.ABC):
         if normfn:
             tmp = normfn(tmp) 
 
+        if isinstance(tmp, (collections.abc.Mapping, list)):
+            ##
+            ## note: the same type/class defaulter might be called
+            ##   for different instances of a submap if
+            ##   SUBDICT_METAKEY_ANY is in play, in that case each
+            ##   item should obviously have its own independend default
+            ##   value, so make sure here this is the case for complex types
+            ##
+            tmp = copy.deepcopy(tmp)
+
         return tmp
 
     @abc.abstractmethod
