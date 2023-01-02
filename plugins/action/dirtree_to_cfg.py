@@ -42,6 +42,7 @@ class ActionModule(BaseAction):
     def _handle_cfgfile(self, cfgdict, cfgfile):
         src_path = cfgfile['src']
         tmpfile = None
+        tmpkey = '_tmp_vardir_cfgfile'
 
         try:
 
@@ -62,7 +63,6 @@ class ActionModule(BaseAction):
 
                 src_path = tmpfile
 
-            tmpkey = '_tmp_vardir_cfgfile'
             tmp = self.run_other_action_plugin(include_vars.ActionModule, 
                plugin_args={'file': src_path, 'name': tmpkey }
             )
@@ -114,6 +114,12 @@ class ActionModule(BaseAction):
         tmp = {}
 
         for (k, v) in iteritems(dircfg):
+            tmp[k] = v
+
+            if not isinstance(v, collections.abc.Mapping):
+                continue
+
+            # if found toplvl key is a mapping, do a vars merge for it
             # ordering??
             tmp[k] = self.merge_vars(invars=[{'name': k, 'optional': True}], 
               vardict=v, vardict_pos=-1
