@@ -14,7 +14,10 @@ from ansible.plugins.action import include_vars, template
 from ansible_collections.smabot.base.plugins.module_utils.plugins.action_base import BaseAction
 
 from ansible_collections.smabot.base.plugins.action import merge_vars
-from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import get_subdict, merge_dicts
+from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import \
+  get_subdict,\
+  merge_dicts,\
+  template_recursive
 
 
 ##display = Display()
@@ -114,6 +117,7 @@ class ActionModule(BaseAction):
         tmp = {}
 
         for (k, v) in iteritems(dircfg):
+            v = template_recursive(v, self._templar)
             tmp[k] = v
 
             if not isinstance(v, collections.abc.Mapping):
