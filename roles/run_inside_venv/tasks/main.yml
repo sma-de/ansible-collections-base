@@ -62,6 +62,10 @@
     ansible.builtin.file:
       dest: "{{ smabot_base_run_inside_venv_cfg_normed.venv.path }}"
       state: absent
+
+    ## this would be an always changer obviously, and for such
+    ## situations we prefer a never changer
+    changed_when: False
     when: smabot_base_run_inside_venv_cfg_normed.venv.keep is falsy
 
 
