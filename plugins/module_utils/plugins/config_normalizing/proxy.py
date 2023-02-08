@@ -31,7 +31,7 @@ class StandardProxyNormerBase(NormalizerBase):
             return my_subcfg
 
         ## default proxy values
-        proxy_proxy.setdefault('https', proxy_proxy['http'])
+        setdefault_none(proxy_proxy, 'https', proxy_proxy['http'])
 
         ## create proxy env vars
         proxy_vars = {}
@@ -105,6 +105,7 @@ class ConfigNormerProxyBuildTime(StandardProxyNormerBase):
 
         if my_subcfg['inherit']:
             proxy_proxy = setdefault_none(my_subcfg, 'proxy', {})
+            setdefault_none(proxy_proxy, 'https', proxy_proxy['http'])
 
             pcfg = self.get_parentcfg(cfg, cfgpath_abs, 2)
             tmp = copy.deepcopy(pcfg.get('proxy', {}))
