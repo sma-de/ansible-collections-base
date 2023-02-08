@@ -12,7 +12,7 @@ from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normali
   NormalizerBase
 
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import \
-  merge_dicts \
+  merge_dicts, \
   setdefault_none
 
 from ansible.utils.display import Display
