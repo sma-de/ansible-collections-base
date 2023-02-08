@@ -2,6 +2,7 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import copy
 from urllib.parse import urlparse
 
 from ansible.errors import AnsibleError
@@ -10,7 +11,9 @@ from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normali
   DefaultSetterConstant, \
   NormalizerBase
 
-##from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import get_subdict, SUBDICT_METAKEY_ANY
+from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import \
+  merge_dicts \
+  setdefault_none
 
 from ansible.utils.display import Display
 
@@ -18,25 +21,7 @@ from ansible.utils.display import Display
 display = Display()
 
 
-class ConfigNormerProxy(NormalizerBase):
-
-    def __init__(self, pluginref, *args, 
-        config_path=None, force_ecosystems=False, **kwargs
-    ):
-        self._config_path = config_path or ['proxy']
-
-        subnorms = kwargs.setdefault('sub_normalizers', [])
-        subnorms += [
-          ConfigNormerProxyJava(pluginref, forced=force_ecosystems),
-        ]
-
-        super(ConfigNormerProxy, self).__init__(pluginref, *args, **kwargs)
-
-
-    @property
-    def config_path(self):
-        return self._config_path
-
+class StandardProxyNormerBase(NormalizerBase):
 
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
         proxy_proxy = my_subcfg.get('proxy', None)
@@ -72,6 +57,65 @@ class ConfigNormerProxy(NormalizerBase):
         my_subcfg['vars'] = proxy_vars
         return my_subcfg
 
+
+class ConfigNormerProxy(StandardProxyNormerBase):
+
+    def __init__(self, pluginref, *args,
+        config_path=None, force_ecosystems=False, **kwargs
+    ):
+        self._config_path = config_path or ['proxy']
+
+        subnorms = kwargs.setdefault('sub_normalizers', [])
+        subnorms += [
+          ConfigNormerProxyBuildTime(pluginref, forced=force_ecosystems),
+          ConfigNormerProxyJava(pluginref, forced=force_ecosystems),
+        ]
+
+        super(ConfigNormerProxy, self).__init__(pluginref, *args, **kwargs)
+
+
+    @property
+    def config_path(self):
+        return self._config_path
+
+
+class ConfigNormerProxyBuildTime(StandardProxyNormerBase):
+
+    def __init__(self, pluginref, *args, forced=False, **kwargs):
+       self._add_defaultsetter(kwargs,
+         'activate', DefaultSetterConstant(True)
+       )
+
+       self._add_defaultsetter(kwargs,
+         'inherit', DefaultSetterConstant(True)
+       )
+
+       super(ConfigNormerProxyBuildTime, self).__init__(pluginref, *args, **kwargs)
+
+
+    @property
+    def config_path(self):
+        return ['eco_systems', 'build_time']
+
+
+    def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
+        if not my_subcfg['activate']:
+            ## build time proxy handling explicitly deactivated, nothing to do
+            return my_subcfg
+
+        if my_subcfg['inherit']:
+            proxy_proxy = setdefault_none(my_subcfg, 'proxy', {})
+
+            pcfg = self.get_parentcfg(cfg, cfgpath_abs, 2)
+            tmp = copy.deepcopy(pcfg.get('proxy', {}))
+
+            my_subcfg['proxy'] = merge_dicts(tmp, proxy_proxy)
+
+        super(ConfigNormerProxyBuildTime, self)._handle_specifics_presub(
+          cfg, my_subcfg, cfgpath_abs
+        )
+
+        return my_subcfg
 
 
 class ConfigNormerProxyJava(NormalizerBase):
