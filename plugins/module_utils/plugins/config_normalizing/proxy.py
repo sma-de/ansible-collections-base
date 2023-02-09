@@ -225,6 +225,7 @@ class ConfigNormerProxyJava(ConfigNormerProxyJavaBase):
         return self.get_parentcfg(cfg, cfgpath_abs, 2)
 
     def _handle_auto_detect(self, cfg, my_subcfg, cfgpath_abs):
+        activate = my_subcfg['activate']
         jfact = self.pluginref.get_ansible_fact('java', None)
 
         if jfact:
