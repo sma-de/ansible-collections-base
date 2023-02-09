@@ -2,6 +2,7 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import abc
 import copy
 from urllib.parse import urlparse
 
@@ -67,8 +68,10 @@ class ConfigNormerProxy(StandardProxyNormerBase):
 
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
+          ## note: order does matter here dependency wise
           ConfigNormerProxyBuildTime(pluginref, forced=force_ecosystems),
           ConfigNormerProxyJava(pluginref, forced=force_ecosystems),
+          ConfigNormerProxyJavaBuildTime(pluginref, forced=force_ecosystems),
         ]
 
         super(ConfigNormerProxy, self).__init__(pluginref, *args, **kwargs)
@@ -119,21 +122,7 @@ class ConfigNormerProxyBuildTime(StandardProxyNormerBase):
         return my_subcfg
 
 
-class ConfigNormerProxyJava(NormalizerBase):
-
-    def __init__(self, pluginref, *args, forced=False, **kwargs):
-       self._add_defaultsetter(kwargs, 
-         'activate', DefaultSetterConstant('autodetect')
-       )
-
-       self.forced = forced
-
-       super(ConfigNormerProxyJava, self).__init__(pluginref, *args, **kwargs)
-
-
-    @property
-    def config_path(self):
-        return ['eco_systems', 'java']
+class ConfigNormerProxyJavaBase(NormalizerBase):
 
 
     def _create_proxy_props(self, proxy_url, prefix, java_props):
@@ -152,8 +141,17 @@ class ConfigNormerProxyJava(NormalizerBase):
             )
 
 
+    @abc.abstractmethod
+    def _get_base_proxy_ref(self, cfg, my_subcfg, cfgpath_abs):
+        pass
+
+
+    def _handle_auto_detect(self, cfg, my_subcfg, cfgpath_abs):
+        return True
+
+
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
-        pcfg = self.get_parentcfg(cfg, cfgpath_abs, 2)
+        pcfg = self._get_base_proxy_ref(cfg, my_subcfg, cfgpath_abs)
         proxy_proxy = pcfg.get('proxy', None)
 
         if not proxy_proxy:
@@ -166,32 +164,8 @@ class ConfigNormerProxyJava(NormalizerBase):
             ## java proxy handling explicitly deactivated, nothing to do
             return my_subcfg
 
-        jfact = self.pluginref.get_ansible_fact('java', None)
-
-        if jfact:
-            jfact = jfact.get('active', None)
-
-        auto_detect = False
-        if activate == 'autodetect':
-            auto_detect = True
-            my_subcfg['auto_detect'] = auto_detect
-
-            if not jfact and not self.forced:
-                ## auto detection did not find any java 
-                ## installation, nothing to do
-                return my_subcfg
-
-        else:
-
-            if not self.forced:
-                # use explicitly request java handling, but no 
-                # java could be found, this seems fishy
-                display.warning(
-                   "Java proxy handling explicitly requested, but no"\
-                   " java installation on target detected"
-                )
-
-        my_subcfg['auto_detect'] = auto_detect
+        if not self._handle_auto_detect(cfg, my_subcfg, cfgpath_abs):
+            return my_subcfg
 
         java_props = []
 
@@ -229,4 +203,72 @@ class ConfigNormerProxyJava(NormalizerBase):
         my_subcfg['envvars'] = envvars
 
         return my_subcfg
+
+
+class ConfigNormerProxyJava(ConfigNormerProxyJavaBase):
+
+    def __init__(self, pluginref, *args, forced=False, **kwargs):
+       self._add_defaultsetter(kwargs,
+         'activate', DefaultSetterConstant('autodetect')
+       )
+
+       self.forced = forced
+
+       super(ConfigNormerProxyJava, self).__init__(pluginref, *args, **kwargs)
+
+
+    @property
+    def config_path(self):
+        return ['eco_systems', 'java']
+
+    def _get_base_proxy_ref(self, cfg, my_subcfg, cfgpath_abs):
+        return self.get_parentcfg(cfg, cfgpath_abs, 2)
+
+    def _handle_auto_detect(self, cfg, my_subcfg, cfgpath_abs):
+        jfact = self.pluginref.get_ansible_fact('java', None)
+
+        if jfact:
+            jfact = jfact.get('active', None)
+
+        auto_detect = False
+        if activate == 'autodetect':
+            auto_detect = True
+            my_subcfg['auto_detect'] = auto_detect
+
+            if not jfact and not self.forced:
+                ## auto detection did not find any java
+                ## installation, nothing to do
+                return False
+
+        else:
+
+            if not self.forced:
+                # use explicitly request java handling, but no
+                # java could be found, this seems fishy
+                display.warning(
+                   "Java proxy handling explicitly requested, but no"\
+                   " java installation on target detected"
+                )
+
+        my_subcfg['auto_detect'] = auto_detect
+        return True
+
+
+class ConfigNormerProxyJavaBuildTime(ConfigNormerProxyJavaBase):
+
+    def __init__(self, pluginref, *args, forced=False, **kwargs):
+       self._add_defaultsetter(kwargs,
+         'activate', DefaultSetterConstant(True)
+       )
+
+       super(ConfigNormerProxyJavaBuildTime, self).__init__(pluginref, *args, **kwargs)
+
+
+    @property
+    def config_path(self):
+        return ['eco_systems', 'java_buildtime']
+
+    def _get_base_proxy_ref(self, cfg, my_subcfg, cfgpath_abs):
+        tmp = self.get_parentcfg(cfg, cfgpath_abs)
+        return tmp['build_time']
 
