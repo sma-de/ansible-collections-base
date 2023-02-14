@@ -165,7 +165,7 @@ class NormalizerBase(abc.ABC):
     @property
     def config_path(self):
         ## the "path" / config key chain this normalizer is responsible for
-        None
+        return None
 
     @property
     def simpleform_key(self):
@@ -319,8 +319,10 @@ class NormalizerBase(abc.ABC):
         global_cfg = global_cfg or config
         cfgpath_abs = cfgpath_abs or []
 
-        display.vvv("Normalize config path: {}".format(cfgpath_abs))
+        display.vvv("Normalizer Type: {}".format(type(self)))
+
         display.vvv("Normalize config path: {}".format(cfgpath))
+        display.vvv("Current abs path is: {}".format(cfgpath_abs))
         #display.vvv("Normalize config path{}: {}".format(cfgpath, config))
 
         ## note: we cannot iterate "inplace" here, as we also modify 
@@ -330,14 +332,19 @@ class NormalizerBase(abc.ABC):
           default_empty=True, allow_nondict_leaves=True
         ))
 
+        ##display.vvv("found subdicts: {}".format(sub_dicts))
+
         for (subcfg, subpath) in sub_dicts:
 
-            #display.vvv("Handle matching subpath['{}']: {}".format(subpath, subcfg))
+            ##display.vvv("Handle matching subpath['{}']: {}".format(subpath, subcfg))
+            ##display.vvv("Current absolute path: {}".format(cfgpath_abs))
 
             sp_abs = cfgpath_abs[:]
 
             if subpath:
                 sp_abs += subpath
+
+            ##display.vvv("Final absolute path: {}".format(sp_abs))
 
             subcfg = self._simple_to_dict(global_cfg, subcfg, sp_abs)
 
