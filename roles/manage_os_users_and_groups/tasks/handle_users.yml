@@ -1,0 +1,36 @@
+---
+
+  - set_fact:
+      _id_check_args:
+         short_type: uid
+         long_type: user
+         database: passwd
+         change_cmd: chown
+         name: "{{ _iter_users.value.name }}"
+         force_num_ids: "{{ _iter_users.value.force_num_ids }}"
+         new_id: "{{ _iter_users.value.config.uid | default(-1) }}"
+         state: "{{ _iter_users.value.config.state }}"
+
+  - include_tasks: check_ids/main.yml
+
+
+    ##
+    ## note: it seems that in principle the ansible module can
+    ##   handle uid changes of existing user to some extent, not
+    ##   erroring out, properly setting changed state and also
+    ##   actually really changing uid correctly in "user databases"
+    ##   (like /etc/passwd) and also for some files and dirs
+    ##   (standard home stuff), but the file perm change is not
+    ##   complete it seemingly does it not for all files
+    ##   (not even in home)
+    ##
+  - name: handle user ==>> '{{ _iter_users.value.config.name }}'
+    ansible.builtin.user: "{{ _iter_users.value.config }}"
+
+
+    ##
+    ## potentially this will take care of re-owning user files
+    ## when uid has changed and automatic re-owning was requested
+    ##
+  - include_tasks: reown_userfiles.yml
+

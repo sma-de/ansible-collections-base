@@ -1,0 +1,22 @@
+---
+
+  - set_fact:
+      _id_check_args:
+         short_type: gid
+         long_type: group
+         database: group
+         change_cmd: chgrp
+         name: "{{ _iter_groups.value.name }}"
+         force_num_ids: "{{ _iter_groups.value.force_num_ids }}"
+         new_id: "{{ _iter_groups.value.config.gid | default(-1) }}"
+         state: "{{ _iter_groups.value.config.state }}"
+
+  - include_tasks: check_ids/main.yml
+
+
+  - name: handle group ==>> '{{ _iter_groups.value.config.name }}'
+    ansible.builtin.group: "{{ _iter_groups.value.config }}"
+
+
+  - include_tasks: reown_userfiles.yml
+

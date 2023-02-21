@@ -1,0 +1,48 @@
+---
+
+## when forced true => allow uid change => find all files belonging to old uid and change own to new uid
+
+  - block:
+
+      - name: >-
+          look for files/dirs belonging to old uid/gid and replace them with new one
+        ansible.builtin.command:
+          argv:
+            - find
+            - /
+
+            ## note: the following arg section is for excluding special
+            ##   magic files systems like sys and proc as this is A)
+            ##   simply a good thing for this case and B) avoids any
+            ##   strange errors when trying to access these fs
+            - "-path"
+            - "/sys"
+            - "-prune"
+            - "-o"
+            - "-path"
+            - "/proc"
+            - "-prune"
+
+            ## the actual search starts here
+            - "-o"
+            - "-{{ _id_check_args.short_type }}"
+            - "{{ _tmp_old_numid }}"
+            - "-exec"
+            - "{{ _id_check_args.change_cmd }}"
+            - "-v"
+            - "-h"
+            - "{{ _id_check_args.name }}"
+            - "{}"
+            - ";"
+        register: _tmp_modres
+        changed_when: _tmp_modres.stdout_lines
+
+
+      - debug:
+          msg: |-
+            The following owner changers were performed:
+              {{ _tmp_modres.stdout }}
+        when: _tmp_modres.stdout_lines
+
+    when: _tmp_old_numid != "-1"
+

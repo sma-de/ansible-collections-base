@@ -1,0 +1,20 @@
+---
+
+#######
+##
+## when state present and explicit uid defined
+## check if user already exists on system and get its uid
+## default: error out when uid != uid
+## when forced true => allow uid change
+##
+#######
+
+  - set_fact:
+      _tmp_old_numid: "-1"
+
+
+  - include_tasks: handle_id.yml
+    when: >-
+      _id_check_args.state == 'present'
+      and _id_check_args.new_id != "-1"
+

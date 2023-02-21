@@ -1,0 +1,23 @@
+---
+
+  - name: >-
+      get current {{ _id_check_args.short_type }} for
+      {{ _id_check_args.long_type }} '{{ _id_check_args.name }}' when
+      it already exists
+    ansible.builtin.getent:
+      database: "{{ _id_check_args.database }}"
+      fail_key: false
+      key: "{{ _id_check_args.name }}"
+
+  - set_fact:
+      _tmp_old_numid: >-
+         {{ ansible_facts.getent_passwd[_id_check_args.name][1] | default(-1) }}
+
+
+  ##
+  ## if the user does not exist yet (is new), we are done here,
+  ## otherwise continue with included tasks below
+  ##
+  - include_tasks: user_exists.yml
+    when: _tmp_old_numid != "-1"
+

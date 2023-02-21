@@ -1,0 +1,45 @@
+---
+
+  - set_fact:
+      _ids_match: >-
+        {{ _tmp_old_numid == _id_check_args.new_id }}
+
+
+  - name: >-
+      make sure old and new {{ _id_check_args.short_type }} are identical
+    ansible.builtin.assert:
+      that:
+        - _ids_match or _id_check_args.force_num_ids
+      fail_msg: >-
+        Current {{ _id_check_args.short_type }} of existing
+        {{ _id_check_args.long_type }} '{{ _id_check_args.name }}'
+        differs from the explicitly given new one
+        ({{ _tmp_old_numid }} != {{ _id_check_args.new_id }}). If this
+        is okay and you want to explicitly change it and matching file
+        ownerships set the option 'force_num_ids' to true. Be aware
+        that changing uids or gids on a pre existing system as a after
+        thought can be tricky to be done 100% right and depending on
+        your system and what it does with the user/group in question
+        in pre existing sub installations your workload may fail after
+        the change and manual after work might be necessary.
+
+
+  ## no need to re-own anything if ids have not changed
+  - set_fact:
+      _tmp_old_numid: "-1"
+    when: _ids_match
+
+
+  ##
+  ## id's have change and re-owning is explicitly requested by user (will
+  ## not be done here but after user/group module has been executed)
+  ##
+  - debug:
+      msg: >-
+        {{ _id_check_args.short_type }} for existing
+        {{ _id_check_args.long_type }} '{{ _id_check_args.name }}' has
+        changed from '{{ _tmp_old_numid }}' to
+        '{{ _id_check_args.new_id }}' and force option was set. All
+        files and directories owned by old ID will be changed to new one.
+    when: not _ids_match
+

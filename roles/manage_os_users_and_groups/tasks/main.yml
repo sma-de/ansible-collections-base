@@ -1,0 +1,64 @@
+---
+
+##
+## role which handle creation / modification and deletion of OS users
+## and groups
+##
+## config:
+##   smabot_base_manage_os_users_and_groups_args:
+##     users:
+##       users:
+##         user_a:
+##           # name: # optional, defaults to mapkey
+##           # config: # optional subdict directly forwarded to upstream module
+##           #   uid: 4223
+##
+##           ##
+##           ## note: personal user id groups should always configured here, not in the generic group section
+##           ##
+##           personal_group:
+##             # name: # optional, defaults to username
+##             # config:
+##             #   gid: # optional, defaults to uid
+##
+##     groups:
+##       groups:
+##         group_a:
+##           # name: # optional, defaults to mapky
+##           # config: # optional subdict directly forwarded to upstream module
+##           #   gid: 4223
+##
+
+  - smabot.base.normalize_manage_os_users_and_groups_args:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_manage_os_users_and_groups_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+
+
+  # do normal groups
+  - include_tasks: handle_groups.yml
+    loop: >-
+      {{ smabot_base_manage_os_users_and_groups_args_normed.groups.groups
+       | dict2items() }}
+    loop_control:
+      loop_var: _iter_groups
+
+
+  # do users
+  - include_tasks: handle_users.yml
+    loop: >-
+      {{ smabot_base_manage_os_users_and_groups_args_normed.users.users
+       | dict2items() }}
+    loop_control:
+      loop_var: _iter_users
+
+
+  # do user id pseudo groups
+  - include_tasks: handle_groups.yml
+    loop: >-
+      {{ smabot_base_manage_os_users_and_groups_args_normed.groups.user_personal_groups
+       | dict2items() }}
+    loop_control:
+      loop_var: _iter_groups
+
