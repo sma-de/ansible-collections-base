@@ -450,7 +450,8 @@ class ConfigNormalizerBase(BaseAction):
     def merge_args(self):
         return {
           'invars': [{ 
-             'name': self.get_taskparam('config_ansvar'), 'optional': False
+             'name': self.get_taskparam('config_ansvar'),
+             'optional': self.allow_empty
           }],
         }
 
