@@ -108,7 +108,11 @@ class ConfigNormerProxyBuildTime(StandardProxyNormerBase):
 
         if my_subcfg['inherit']:
             proxy_proxy = setdefault_none(my_subcfg, 'proxy', {})
-            setdefault_none(proxy_proxy, 'https', proxy_proxy['http'])
+
+            tmp = proxy_proxy.get('http', None)
+
+            if tmp:
+                setdefault_none(proxy_proxy, 'https', tmp)
 
             pcfg = self.get_parentcfg(cfg, cfgpath_abs, 2)
             tmp = copy.deepcopy(pcfg.get('proxy', {}))
