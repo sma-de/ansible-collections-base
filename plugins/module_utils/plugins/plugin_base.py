@@ -113,7 +113,9 @@ def check_paramtype(param, value, typespec, errmsg):
 
     if not type_match:
         if not errmsg:
-            errmsg = "Must be one of the following types: {}".format(typespec)
+            errmsg = "Is of type '{}' but must be one of the following"\
+                     " types: {}".format(type(value), typespec)
+
         raise AnsibleOptionsError(
            "Value '{}' for param '{}' failed its type"
            " check: {}".format(value, param, errmsg)
