@@ -10,17 +10,13 @@ from ansible.module_utils.six import iteritems, string_types
 from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normalizing.base import \
   ConfigNormalizerBase, NormalizerBase, NormalizerNamed, DefaultSetterConstant
 
+from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normalizing.pam_rules_base import \
+  PamRulesNormer, order_pamrules_list
+
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import setdefault_none, merge_dicts, SUBDICT_METAKEY_ANY
 
 from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert
 
-
-## different distros use diffrent name schemes for pam files,
-## add overwrites here when necessary
-DISTRO_PAMFILE_OVERWRITES = {
-  ##"distro name as returned by ansible_distribution": "pam-file-name"
-  ## TODO: fill when suporting another distro
-}
 
 
 class PamBasedLoginRestrictorNormer(NormalizerBase):
@@ -37,7 +33,7 @@ class PamBasedLoginRestrictorNormer(NormalizerBase):
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
           LocalUsersNormer(pluginref),
-          PamRulesNormer(pluginref),
+          PamRulesNormerExt(pluginref),
         ]
 
         super(PamBasedLoginRestrictorNormer, self).__init__(pluginref, *args, **kwargs)
@@ -78,7 +74,7 @@ class PamBasedLoginRestrictorNormer(NormalizerBase):
         pamfile = my_subcfg['pam_rules']['pamfile']
         prerule = my_subcfg['pam_rules']['prerule']['config']
 
-        rules = [prerule]
+        rules = []
 
         if local_users:
             nxt_rule = {
@@ -99,44 +95,14 @@ class PamBasedLoginRestrictorNormer(NormalizerBase):
 
         rules += self._get_specific_pamrules(cfg, my_subcfg, cfgpath_abs)
 
-        # ingore first rule, this is not managed by us
-        # and only used as reference
-        i = 1
-        for r in rules[1:]:
-            state = r.get('state', 'after')
-
-            if not enabled:
-                state = 'absent'
-
-            r['name'] = pamfile
-            r['new_type'] = r['type']
-            r['new_control'] = r['control']
-            r['new_module_path'] = r['module_path']
-            r['state'] = state
-
-            if state != 'absent':
-                tmp = r.pop('refrule', None)
-
-                if not tmp:
-                    j = i - 1
-
-                    while True:
-                        tmp = rules[j]
-                        if tmp.get('state', '') != 'absent':
-                            break
-
-                        j -= 1
-
-                r['type'] = tmp.get('new_type', tmp['type'])
-                r['control'] = tmp.get('new_control', tmp['control'])
-                r['module_path'] = tmp.get('new_module_path', tmp['module_path'])
-
-            i += 1
+        rules = order_pamrules_list(rules, pamfile,
+          pre_rule=prerule, enabled=enabled
+        )
 
         my_subcfg['_exports'] = {
           'pam_cfgfiles_present': file_cfgs_present,
           'pam_cfgfiles_absent': file_cfgs_absent,
-          'pam_rules': rules[1:],
+          'pam_rules': rules,
         }
 
         return my_subcfg
@@ -162,7 +128,7 @@ class LocalUsersNormer(NormalizerNamed):
         return 'enabled'
 
 
-class PamRulesNormer(NormalizerBase):
+class PamRulesNormerExt(PamRulesNormer):
 
     def __init__(self, pluginref, *args, **kwargs):
         subnorms = kwargs.setdefault('sub_normalizers', [])
@@ -171,22 +137,9 @@ class PamRulesNormer(NormalizerBase):
           PamPostRuleNormer(pluginref),
         ]
 
-        super(PamRulesNormer, self).__init__(
+        super(PamRulesNormerExt, self).__init__(
            pluginref, *args, **kwargs
         )
-
-    @property
-    def config_path(self):
-        return ['pam_rules']
-
-    def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
-        pamfile_default = DISTRO_PAMFILE_OVERWRITES.get(
-           self.pluginref.get_ansible_var('ansible_distribution'),
-           'common-auth' # current default is based on modern ubuntu
-        )
-
-        setdefault_none(my_subcfg, 'pamfile', pamfile_default)
-        return my_subcfg
 
 
 class PamPreRuleNormer(NormalizerBase):

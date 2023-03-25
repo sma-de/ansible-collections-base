@@ -1,0 +1,59 @@
+---
+
+##
+##  smabot_base_pam_groups_args:
+##    config_entries:
+##      entries:
+##
+##        audio,play: # aribtrary mapkey for a single entry
+##          ##services: ## defaults to "*"
+##          ##ttys: ## defaults to "*"
+##          ##times: ## defaults to no time restriction (24/7)
+##          ##users: ## defaults to "*"
+##          ##groups: ## defaults to mapkey correctly split (by comma or space)
+##
+##    pam_rules: # optional
+##      pamfile: # optional, defaults probably to 'common-auth', but can vary depending on distro
+##
+##      # existing rule where to put our rules below
+##      prerule: # optional, defaults to empty, meaning it is simply put at the end of the pam file
+##        ##config:
+##        ##  type: auth
+##        ##  control: requisite
+##        ##  module_path: pam_deny.so
+##
+
+  - smabot.base.normalize_pam_groups_args:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_pam_groups_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+
+
+  - name: ensure pam config dirs exist
+    ansible.builtin.file:
+      dest: "{{ _iter_pam_cfgdirs }}"
+      state: directory
+    loop:
+      - /etc/security
+      - /etc/pam.d
+    loop_control:
+      loop_var: _iter_pam_cfgdirs
+
+
+  - name: template group config file
+    ansible.builtin.template:
+      src: group.conf.j2
+      dest: /etc/security/group.conf
+      owner: root
+      group: root
+      mode: '644'
+
+
+  - name: create or remove group pam rule(s)
+    smabot.base.pamd_ext: "{{ _iter_pamrules }}"
+    loop: >-
+      {{ smabot_base_pam_groups_args_normed.pam_rules._exportlst }}
+    loop_control:
+      loop_var: _iter_pamrules
+

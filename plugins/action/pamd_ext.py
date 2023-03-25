@@ -33,6 +33,21 @@ class ActionModule(BaseAction):
     ]
 
 
+    ##
+    ## upstream module has atm this unfortunate behaviour where
+    ## it requires params explicitly set to something which are
+    ## actually not used in the current situation (e.g. when
+    ## state is updated), for those cases we will simply default
+    ## these params accordingly
+    ##
+    PAMD_ARGS_DEFAULTMAP = {
+      ## when 'new_type' value is unset, default it to 'type' value
+      'new_type': 'type',
+      ##'new_control': 'control',
+      ##'new_module_path': 'module_path',
+    }
+
+
     def __init__(self, *args, **kwargs):
         super(ActionModule, self).__init__(*args, **kwargs)
         self._supports_check_mode = False
@@ -94,7 +109,11 @@ class ActionModule(BaseAction):
             ## version does exists in the pamd file the later pamd module
             ## call should be able to handle the finetuning itself correctly
             ##
-            'line': '{}\t{}\t{}'.format(
+            ## note.2: it seems ws separators between fields are not really
+            ##   standardized, but it also doesn't really matter much, any
+            ##   whitespace seems to do it
+            ##
+            'line': '{}   {}   {}'.format(
                self.get_taskparam('type'),
                self.get_taskparam('control'),
                self.get_taskparam('module_path'),
@@ -121,7 +140,15 @@ class ActionModule(BaseAction):
         pass_args = {}
 
         for x in self.PAMD_PASSTHROUGH_ARS:
-            pass_args[x] = self.get_taskparam(x)
+            val = self.get_taskparam(x)
+
+            if not val and state == 'updated':
+                tmp = self.PAMD_ARGS_DEFAULTMAP.get(x, None)
+
+                if tmp:
+                    val = self.get_taskparam(tmp)
+
+            pass_args[x] = val
 
         mres = self.exec_module('community.general.pamd',
           modargs=pass_args,
