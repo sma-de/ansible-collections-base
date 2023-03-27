@@ -6,6 +6,7 @@ ANSIBLE_METADATA = {
     'supported_by': 'community'
 }
 
+import os
 
 from ansible.errors import AnsibleFilterError, AnsibleOptionsError
 from ansible.module_utils.six import string_types
@@ -68,6 +69,73 @@ class StripFileEndingsFilter(FilterBase):
         return '.'.join(tmp[:-ec])
 
 
+##
+## takes any path as input and return a list including the path and
+## all its parent paths sorted top down, for example:
+##
+##   input == 'foo/bar/baz' => result:
+##     [foo, foo/bar, foo/bar/baz]
+##
+##   input == '/etc' => result:
+##     [/, /etc]
+##
+class ExplodePathFilter(FilterBase):
+
+    FILTER_ID = 'explode_path'
+
+    @property
+    def argspec(self):
+        tmp = super(ExplodePathFilter, self).argspec
+
+        tmp.update({
+          'relroot': (list(string_types), ''),
+        })
+
+        return tmp
+
+    def run_specific(self, filepath):
+        if not isinstance(filepath, string_types):
+            raise AnsibleOptionsError(
+               "filter param 'filepath' must be a string, but given value"\
+               " '{}' has type '{}'".format(filepath, type(filepath))
+            )
+
+        cp = os.path.normpath(filepath)
+        res_paths = [cp]
+
+        relroot = os.path.normpath(self.get_taskparam('relroot'))
+        stop_early = False
+
+        while True:
+            nxp = os.path.normpath(os.path.dirname(cp))
+
+            ## if an optional relative root path is given stop
+            ## explosion early when reaching this root instead
+            ## of the system abs root, note that this does not
+            ## influence if returned paths are abs or relative
+            ## which we dont modify here
+            if relroot and nxp == relroot:
+                stop_early = True
+                break
+
+            ## 1st condition hits for relative paths, 2nd for abs
+            ## paths when we have reached "the top"
+            if not nxp or nxp == cp:
+                break
+
+            cp = nxp
+            res_paths.append(cp)
+
+        if relroot and not stop_early:
+            raise AnsibleFilterError(
+               "Failed to match given relative root path '{}' to a"\
+               " parent of given exploding path '{}'. Check if your"\
+               " input paths are correct.".format(relroot, filepath)
+            )
+
+        return list(reversed(res_paths))
+
+
 # ---- Ansible filters ----
 class FilterModule(object):
     ''' file path related filters '''
@@ -75,7 +143,7 @@ class FilterModule(object):
     def filters(self):
         res = {}
 
-        for f in [StripFileEndingsFilter]:
+        for f in [StripFileEndingsFilter, ExplodePathFilter]:
             res[f.FILTER_ID] = f()
 
         return res
