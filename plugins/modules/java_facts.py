@@ -140,10 +140,12 @@ import re
 
 from ansible.module_utils.basic import AnsibleModule
 
+from ansible_collections.smabot.base.plugins.module_utils.compability import \
+  inheritance
 
 
 # TODO: regexing around in human addressed info is not really ideal, is there a better alternative, like maybe running a small java program which analyze with structure, but are we guaranteed to have a java compiler on remote??
-class JVM_Detector(abc.ABC):
+class JVM_Detector(inheritance.get_abc_baseclass()):
 
     def __init__(self):
         self.version = None

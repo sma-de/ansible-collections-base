@@ -158,10 +158,16 @@ import re
 
 from ansible.module_utils.basic import AnsibleModule
 
+from ansible.module_utils import \
+  six
+
+
+from ansible_collections.smabot.base.plugins.module_utils.compability import \
+  inheritance
 
 
 # TODO: regexing around in human addressed info is not really ideal, is there a better alternative???
-class PipVer_Detector(abc.ABC):
+class PipVer_Detector(inheritance.get_abc_baseclass()):
 
     def __init__(self):
         self.pipver = None
@@ -344,7 +350,7 @@ class PipFactCollector(AnsibleModule):
         default_active_candidates = []
 
         for x in all_tries:
-            if not isinstance(x, collections.abc.Mapping):
+            if not isinstance(x, six.moves.collections_abc.Mapping):
                 x = {'name': x, 'mandatory': False, 'force_active': False}
 
             name = x['name']
