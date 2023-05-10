@@ -59,7 +59,7 @@ class ActionModule(BaseAction):
         tmp = super(ActionModule, self).argspec
 
         tmp.update({
-          'backup': ([bool, type(None)], None),
+          'backup': ([bool], False),
           'control': (list(string_types)),
           'module_arguments': ([list(string_types), type(None)], None),
           'module_path': (list(string_types)),
