@@ -63,8 +63,11 @@ def merge_dicts(da, db, strats_fallback=None):
 ##
 ## note: for some unfortunate reason inheritance breaks ansible templating, so we do it here ourselves
 ##
-def template_recursive(mapping, templater, topmap=None, keychain=None):
-    def handle_selfref(v, topmap, keychain):
+def template_recursive(mapping, templater,
+    topmap=None, keychain=None, newmap=None,
+    new_parent=None
+):
+    def handle_selfref(v, topmap, keychain, newmap):
         if not isinstance(v, string_types):
             return v
 
@@ -100,7 +103,18 @@ def template_recursive(mapping, templater, topmap=None, keychain=None):
 
                 selfref_key = tmp
 
-            tmp = get_subdict(topmap, selfref_key, allow_nondict_leaves=True)
+            try:
+                ## first check newmap if it already contains selfref_key
+                ## to get the latest iteration of the value in question
+                tmp = get_subdict(newmap, selfref_key,
+                   allow_nondict_leaves=True
+                )
+            except KeyError:
+                ## if selfref_key was not yet handled and as such is
+                ## not already in newmap fallback to "old" topmap
+                tmp = get_subdict(topmap, selfref_key,
+                   allow_nondict_leaves=True
+                )
 
             if isinstance(tmp, collections.abc.Mapping) \
               or isinstance(tmp, list):
@@ -123,17 +137,19 @@ def template_recursive(mapping, templater, topmap=None, keychain=None):
 
         return v
 
-    if topmap is None:
-        topmap = mapping
-        keychain = []
-
-    ## TODO: also template keys like set_fact do
+    ## TODO: also template keys like set_fact does
     is_map = isinstance(mapping, collections.abc.Mapping)
 
-    if is_map:
-        nm = {}
-    else:
-        nm = []  # assume list
+    if topmap is None:
+        topmap = mapping
+
+        if is_map:
+            newmap = {}
+        else:
+            newmap = []
+
+        new_parent = newmap
+        keychain = []
 
     i = 0
     for v in mapping:
@@ -146,27 +162,42 @@ def template_recursive(mapping, templater, topmap=None, keychain=None):
 
         keychain.append(k)
 
+        # template non-complex values
         if not isinstance(v, collections.abc.Mapping) \
         and not isinstance(v, list):
-            v = handle_selfref(v, topmap, keychain)
+            v = handle_selfref(v, topmap, keychain, newmap)
             v = templater.template(v)
 
-        if isinstance(v, collections.abc.Mapping) \
-        or isinstance(v, list):
-            v = template_recursive(v, templater,
-              topmap=topmap, keychain=keychain
+        # recurse down complex aka collection values, must happen
+        # after templating as templating might convert a simple
+        # values to a collection one
+        is_submap = isinstance(v, collections.abc.Mapping)
+        if is_submap or isinstance(v, list):
+            if is_submap:
+                nm = {}
+            else:
+                nm = []  # assume list
+
+            if is_map:
+                new_parent[k] = nm
+            else:
+                new_parent.append(nm)
+
+            template_recursive(v, templater,
+              topmap=topmap, keychain=keychain, newmap=newmap,
+              new_parent=nm
             )
 
-        keychain.pop()
-
-        if is_map:
-            nm[k] = v
         else:
-            nm.append(v)
+            if is_map:
+                new_parent[k] = v
+            else:
+                new_parent.append(v)
 
+        keychain.pop()
         i += 1
 
-    return nm
+    return newmap
 
 
 def get_subdict(d, keychain, **kwargs):
