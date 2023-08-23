@@ -1,0 +1,21 @@
+---
+
+    ## check distro specific if current bad ver
+    ## is currently installed (if not, we are done here)
+  - set_fact:
+      _tmp_badvers_installed: []
+      _tmp_badvers_installed_metavar: _tmp_badvers_installed
+
+  - include_tasks: check_badvers.yml
+
+
+    ##
+    ## do method specific bad ver handling when necessary
+    ##
+    ## note: by the generalisation powers of ansible most
+    ##   of the methods here if not all should be doable
+    ##   generically (distro-independend)
+    ##
+  - include_tasks: badver_fixing/main.yml
+    when: _tmp_badvers_installed is truthy
+

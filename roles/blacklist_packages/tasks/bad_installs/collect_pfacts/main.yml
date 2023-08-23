@@ -1,0 +1,11 @@
+---
+
+##
+## collect package facts, this is distro specific and might not be
+## senseable on every platform, which is fine (in that case later
+## badver handling needs to do a per package query of some kind)
+##
+
+  - include_tasks: debian.yml
+    when: ansible_os_family == "Debian"
+

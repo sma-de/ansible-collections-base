@@ -1,0 +1,14 @@
+---
+
+  ## when possible collect package facts
+  - include_tasks: collect_pfacts/main.yml
+
+
+  ## iterate over packages
+  - include_tasks: handle_badver/main.yml
+    loop: >-
+      {{ smabot_base_blacklist_packages_args_normed.packages.packages
+       | dict2items }}
+    loop_control:
+      loop_var: _iter_bad_inst_packs
+

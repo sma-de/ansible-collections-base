@@ -1,0 +1,14 @@
+---
+
+  ## create apt preferences file to blacklist all bad package versions
+  - name: >-
+      create apt preference blacklisting file for package ==>> {{ _iter_pref_files.value.package }}
+    ansible.builtin.copy: "{{ _iter_pref_files.value.cfg }}"
+    loop: >-
+      {{ smabot_base_blacklist_packages_args_normed._blacklist_cfg.fill_pref_files | dict2items }}
+    loop_control:
+      loop_var: _iter_pref_files
+
+  - set_fact:
+      _tmp_blacklisting_handled: true
+

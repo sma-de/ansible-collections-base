@@ -1,0 +1,13 @@
+---
+
+  - set_fact:
+      _tmp_badvers_fixing_done: true
+
+
+  - smabot.base.warn:
+      msg: |-
+        Blacklisted version '{{ _iter_badvers.version }}' of package '{{ _iter_bad_inst_packs.value.name }}'
+        is currently installed on target. Ensure that it gets de-installed
+        from target or change the 'when_installed' method used for this version:
+        {{ _iter_badvers }}
+

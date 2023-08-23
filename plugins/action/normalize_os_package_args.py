@@ -175,7 +175,9 @@ class AllPackagesNormer(NormalizerBase):
 
             if not t2:
                 t2 = copy.deepcopy(vc)
-                t2['name'] = [t2['name']]
+
+                if not isinstance(t2['name'], list):
+                    t2['name'] = [t2['name']]
             else:
                 cp = t2.pop('name')
                 np = vc.pop('name')

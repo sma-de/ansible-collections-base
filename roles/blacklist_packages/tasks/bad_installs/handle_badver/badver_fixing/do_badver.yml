@@ -1,0 +1,45 @@
+---
+
+  - set_fact:
+      _tmp_badvers_fixing_done: false
+      _tmp_badvers_removed: false
+      _tmp_badvers_inst_recheck: []
+      _tmp_badvers_installed_metavar: _tmp_badvers_inst_recheck
+
+
+  - include_tasks: >-
+       methods/{{ _iter_badvers._anscfg._when_installed_active.type }}.yml
+
+
+  - ansible.builtin.assert:
+      that: "{{ _tmp_badvers_fixing_done }}"
+      fail_msg: >-
+         Unsupported bad version handling method:
+         {{ _iter_badvers._anscfg._when_installed_active.type }}
+
+
+    ##
+    ## note: not every method automatically cleans / removes bad
+    ##   versioned installs, but for the ones which are expected
+    ##   to do this, check here if they were actually succesful
+    ##
+  - block:
+
+       - include_tasks: ../../collect_pfacts/main.yml
+
+       - include_tasks: ../check_badvers.yml
+
+       - ansible.builtin.assert:
+           that: >-
+             {{ not (_tmp_badvers_inst_recheck
+              | selectattr('version', '==', _iter_badvers.version)
+              | list) }}
+
+           fail_msg: >-
+             Fixing bad version '{{ _iter_badvers.version }}' for package
+             '{{ _iter_bad_inst_packs.value.name }}' by the method of
+             '{{ _iter_badvers._anscfg._when_installed_active.type }}'
+             failed. System detects bad version still as installed.
+
+    when: _tmp_badvers_removed
+

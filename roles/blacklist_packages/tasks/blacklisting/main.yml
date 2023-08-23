@@ -1,0 +1,17 @@
+---
+
+  - set_fact:
+      _tmp_blacklisting_handled: false
+
+## TODO: this
+##  - include_tasks: alpine.yml
+##    when: ansible_os_family == "Alpine"
+
+  - include_tasks: debian.yml
+    when: ansible_os_family == "Debian"
+
+
+  - ansible.builtin.assert:
+      that: "{{ _tmp_blacklisting_handled }}"
+      fail_msg: "Unsupported OS family: {{ ansible_os_family }}"
+

@@ -1,0 +1,22 @@
+---
+
+  ##
+  ## on default use standard generic package facts
+  ## to check if we have a badver installed
+  ##
+
+  - set_fact:
+      _tmp_vercheck_handled: true
+      _tmp_testvers: >-
+        {{ ansible_facts.packages[_iter_bad_inst_packs.value.name]
+         | selectattr("version", "in",
+              _iter_bad_inst_packs.value.versions._blacklist_vers
+           )
+        }}
+
+
+  - set_fact:
+      "{{ _tmp_badvers_installed_metavar }}": "{{ _tmp_testvers }}"
+    when: >-
+      {{ _tmp_testvers is truthy }}
+

@@ -1,0 +1,18 @@
+---
+
+    ## check distro specific if current bad ver
+    ## is currently installed (if not, we are done here)
+  - set_fact:
+      _tmp_vercheck_handled: false
+
+## TODO: this
+##  - include_tasks: alpine.yml
+##    when: ansible_os_family == "Alpine"
+
+  - include_tasks: check_debian.yml
+    when: ansible_os_family == "Debian"
+
+  - ansible.builtin.assert:
+      that: "{{ _tmp_vercheck_handled }}"
+      fail_msg: "Unsupported OS family: {{ ansible_os_family }}"
+

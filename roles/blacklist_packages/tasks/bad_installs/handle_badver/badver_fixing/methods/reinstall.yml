@@ -1,0 +1,22 @@
+---
+
+##
+## de-install package, than reinstall it, as blacklisted package versions
+## are now blacklisted system should automatically choose another
+## non blacklisted version
+##
+
+  - set_fact:
+      _tmp_badvers_fixing_done: true
+      _tmp_badvers_removed: true
+
+
+  - name: remove bad versioned package
+    ansible.builtin.package: >-
+      {{ _iter_badvers._anscfg._when_installed_active.remove_old.cfg }}
+
+
+  - name: re-install package
+    ansible.builtin.package: >-
+      {{ _iter_badvers._anscfg._when_installed_active.install_new.cfg }}
+

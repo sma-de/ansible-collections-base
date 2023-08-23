@@ -1,0 +1,11 @@
+---
+
+##
+## generic default method supporting a lot of typical package managers
+## like apt, apk, rpm and so on
+##
+
+  - name: gather package facts
+    ansible.builtin.package_facts:
+      manager: auto
+

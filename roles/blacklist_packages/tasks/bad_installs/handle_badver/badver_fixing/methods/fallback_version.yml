@@ -1,0 +1,13 @@
+---
+
+  - set_fact:
+      _tmp_badvers_fixing_done: true
+      _tmp_badvers_removed: true
+      smabot_base_os_packages_args: >-
+        {{ _iter_badvers._anscfg._when_installed_active.install_new.cfg }}
+
+
+  - name: down or upgrade bad versioned package to given fallback version
+    ansible.builtin.include_role:
+      name: smabot.base.os_packages
+

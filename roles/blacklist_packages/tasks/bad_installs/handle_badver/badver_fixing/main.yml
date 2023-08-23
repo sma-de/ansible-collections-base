@@ -1,0 +1,24 @@
+---
+
+    ##
+    ## combine system queried bad version data with
+    ## cfg settings for this version
+    ##
+  - set_fact:
+      _tmp_badvers_installed: >-
+        {%- set res = namespace(lst=[]) -%}
+        {%- for v in _tmp_badvers_installed -%}
+          {%- set res.lst = res.lst + [v | combine({
+               '_anscfg': _iter_bad_inst_packs.value.versions.blacklist[v.version],
+             })]
+          -%}
+        {%- endfor -%}
+        {{ res.lst }}
+
+
+  - include_tasks: do_badver.yml
+    loop: >-
+      {{ _tmp_badvers_installed }}
+    loop_control:
+      loop_var: _iter_badvers
+

@@ -1,0 +1,57 @@
+---
+
+##
+## role which handles installing software from source url, probably an archive
+##
+## smabot_base_blacklist_packages_args:
+##   packages:
+##     packages:
+##       docker.io: ## <package_name>
+##          ##name: ## defaults to mapkey
+##          versions:
+##
+##            blacklist:
+##              "20.10.25-0ubuntu1~22.04.1":  ## <bad_ver_x>:
+##                ##name: ## defaults to mapkey
+##
+##                comment: optional comment text added to apt/preferences file verbatim
+##
+##                ## ## what should be done when this bad version is currently installed on target
+##                ## when_installed:
+##
+##                ##   ## installs explicit other good version defined here instead
+##                ##   fallback_version:  <good_ver>
+##
+##                ##   ## throws an ansible error
+##                ##   raise_error: ## <-- default
+##
+##                ##   ## similar to default raise_error, but downgrades error to warning
+##                ##   warn:
+##
+##                ##   ## deinstalls package and then reinstalls it with blacklisting
+##                ##   ## in place which normally should install the latest
+##                ##   ## non-blacklisted version, kinda similar to fallback_version
+##                ##   ## but because of needed deinstall first more heavy handed
+##                ##   reinstall:
+##
+
+
+  - smabot.base.normalize_blacklist_packages:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_blacklist_packages_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+
+
+    ##
+    ## ensure given package versions are properly blacklisted
+    ## in the distro fitting way
+    ##
+  - include_tasks: blacklisting/main.yml
+
+    ##
+    ## ensure no blacklisted package version are installed
+    ## (also very distro / package manager specific)
+    ##
+  - include_tasks: bad_installs/main.yml
+
