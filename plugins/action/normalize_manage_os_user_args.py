@@ -826,6 +826,8 @@ class ActionModule(ConfigNormalizerBaseMerger):
         super(ActionModule, self).__init__(
             RootCfgNormalizer(self), *args, default_merge_vars=[
                'smabot_base_manage_os_user_args_defaults',
+            ], extra_merge_vars_ans=[
+               'extra_smabot_base_manage_os_user_args_config_maps'
             ],
             **kwargs
         )
