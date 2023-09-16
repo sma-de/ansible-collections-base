@@ -48,9 +48,6 @@
   - include_tasks: handle_ssh.yml
     when: _iter_users.value.ssh.enabled
 
-  - debug:
-      msg: >-
-        delegated to => |{{ _iter_users.value.secret_handler | default(omit, True) }}|
 
   - block:
 
