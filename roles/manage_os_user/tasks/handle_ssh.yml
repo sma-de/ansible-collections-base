@@ -1,0 +1,33 @@
+---
+
+  - block:
+
+      - set_fact:
+          ## list of subcfg maps for authkey module, one per key
+          _tmp_user_sshkeys_pub: []
+
+
+      - include_tasks: get_sshkeys.yml
+        loop: "{{ _iter_users.value.ssh.keygen | dict2items }}"
+        loop_control:
+          loop_var: _iter_sshkeys
+
+    ##
+    ## note: currently we just one password for all target systems
+    ## TODO: in theory nothing wrong with having individual passwords for each target, support this use case????
+    ##
+    run_once: true
+    delegate_to: >-
+      {{ _iter_users.value.secret_handler | default(omit, True) }}
+
+
+  - include_tasks: auth_sshkeys.yml
+    loop: "{{ _tmp_user_sshkeys_pub }}"
+    loop_control:
+      loop_var: _iter_sshkeys
+      extended: true
+
+      ## recommended for saving memory when not needed (which it is not in our case) but unfortunately rather new setting, which is not yet avaible on many systems
+      ## TODO: reactivate when it seems save to do so
+      ##extended_allitems: false
+

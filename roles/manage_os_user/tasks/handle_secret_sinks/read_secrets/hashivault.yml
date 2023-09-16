@@ -1,0 +1,45 @@
+---
+
+  - set_fact:
+      smabot_hashivault_readwrite_secrets_args: >-
+        {{ _tmp_secret_readcfg._subcfg_read }}
+
+  - ansible.builtin.include_role:
+      name: smabot.hashivault.readwrite_secrets
+
+
+  - name: successfully read secret(s) from hashivault
+    set_fact:
+      _tmp_user_pw: >-
+         {{ smabot_hashivault_read_secrets[
+               _tmp_secret_readcfg._subcfg_sid
+            ][
+               _tmp_secret_readcfg.config.secret_keys.password
+            ] | default('')
+         }}
+    when: _tmp_secret_type == 'pw'
+    no_log: true
+
+
+  - name: successfully read secret(s) from hashivault
+    set_fact:
+
+      _tmp_user_new_sshkey_pub: >-
+         {{ smabot_hashivault_read_secrets[
+               _tmp_secret_readcfg._subcfg_sid
+            ][
+               _tmp_secret_readcfg.config.secret_keys.public_key
+            ] | default('')
+         }}
+
+      _tmp_user_new_sshkey_private: >-
+         {{ smabot_hashivault_read_secrets[
+               _tmp_secret_readcfg._subcfg_sid
+            ][
+               _tmp_secret_readcfg.config.secret_keys.private_key
+            ] | default('')
+         }}
+
+    when: _tmp_secret_type == 'ssh'
+    no_log: true
+

@@ -1,0 +1,67 @@
+---
+
+  - set_fact:
+      _tmp_final_save_sinks: {}
+      _tmp_mod_user_args: "{{ _iter_users.value.configs.user }}"
+
+
+  - block:
+
+        ##
+        ## note: there are multiple supported ways for getting the user pw
+        ##   here (external source, random gen, hardcoded by cfg, ...), at the
+        ##   end of the day one method should trigger and write it to special
+        ##   internal var "_tmp_user_pw"
+        ##
+      - set_fact:
+          _tmp_user_pw:
+
+          ## optional password related usermodule cfg overrrides
+          _tmp_user_pw_cfg: {}
+
+
+      - include_tasks: get_password.yml
+
+
+      - set_fact:
+          _tmp_mod_user_args: >-
+            {{ _tmp_mod_user_args | combine(_tmp_user_pw_cfg)
+             | combine({'password': _tmp_user_pw}) }}
+        no_log: true
+
+    ##
+    ## note: currently we just one password for all target systems
+    ## TODO: in theory nothing wrong with having individual passwords for each target, support this use case????
+    ##
+    run_once: true
+    delegate_to: >-
+      {{ _iter_users.value.secret_handler | default(omit, True) }}
+    when: _iter_users.value.password.enabled is truthy
+
+
+  - name: add / modify / remove os user  ==>>  {{ _iter_users.value.name }}
+    ansible.builtin.user: "{{ _tmp_mod_user_args }}"
+    become: yes
+
+
+    ## optionally handle ssh access for this user
+  - include_tasks: handle_ssh.yml
+    when: _iter_users.value.ssh.enabled
+
+  - debug:
+      msg: >-
+        delegated to => |{{ _iter_users.value.secret_handler | default(omit, True) }}|
+
+  - block:
+
+      - name: optionally save new secrets to secret sink(s)
+        include_tasks: handle_secret_sinks/main_write.yml
+        loop: "{{ _tmp_final_save_sinks | dict2items }}"
+        loop_control:
+          loop_var: _iter_save_sinks
+
+    run_once: true
+    ##delegate_to: localhost
+    delegate_to: >-
+      {{ _iter_users.value.secret_handler | default(omit, True) }}
+

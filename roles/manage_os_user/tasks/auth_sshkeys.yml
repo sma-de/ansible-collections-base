@@ -1,0 +1,34 @@
+---
+
+  - block:
+
+        ##
+        ## combine generic module args with key specific modargs, mainly
+        ## the key value itself, but could optionally also contains key
+        ## specific options
+        ##
+      - set_fact:
+          _tmp_mod_args: >-
+            {{ _iter_users.value.configs.authkey | smabot.base.deepcopy
+             | combine(_iter_sshkeys) }}
+
+
+        ##
+        ## as we call the ssh auth module once for each key to
+        ## support key specific options we must make sure that
+        ## independend of the general idea is that defined keys
+        ## are exclusive that any loop calls besides the first
+        ## iteration are not set exclusive, otherwise only the
+        ## last key of our list would be valid
+        ##
+      - set_fact:
+          _tmp_mod_args: >-
+            {{ _tmp_mod_args | combine({'exclusive': False}) }}
+        when: not ansible_loop.first
+
+    run_once: true
+
+
+  - name: allow ssh access for user and defined ssh key
+    ansible.posix.authorized_key: "{{ _tmp_mod_args }}"
+

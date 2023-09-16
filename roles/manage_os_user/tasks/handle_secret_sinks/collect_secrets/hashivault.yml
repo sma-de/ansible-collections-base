@@ -1,0 +1,54 @@
+---
+
+    ##
+    ## depending on caller situation ever attach ssh secret data or password
+    ##
+
+  - set_fact:
+      _tmp_new_data: >-
+        {{
+           {
+             _iter_save_sinks.value.config.secret_keys.public_key:
+                _tmp_user_new_sshkey_pub,
+             _iter_save_sinks.value.config.secret_keys.private_key:
+                _tmp_user_new_sshkey_private,
+           }
+        }}
+    when: _tmp_secret_type == 'ssh'
+    no_log: true
+
+  - set_fact:
+      _tmp_new_data: >-
+        {{
+           {
+             _iter_save_sinks.value.config.secret_keys.password:
+                _tmp_user_pw,
+           }
+        }}
+    when: _tmp_secret_type == 'pw'
+    no_log: true
+
+
+    ##
+    ## combine current secret data cfg with other secret
+    ## data configs for other secrets (will be later
+    ## written once for all secrets combined)
+    ##
+  - set_fact:
+      _tmp_final_save_sinks: >-
+        {{ _tmp_final_save_sinks | combine({
+             _iter_save_sinks.key: {
+                'downcfg': (
+                   _iter_save_sinks.value._subcfg_write | combine({'set_secrets': {
+                      'secrets': {_iter_save_sinks.value._subcfg_sid: {
+                         'data': _tmp_new_data,
+                      }}
+                   }}, recursive=True)
+                ),
+
+                'sinkcfg': _iter_save_sinks.value,
+             },
+           }, recursive=True)
+        }}
+    no_log: true
+

@@ -1,0 +1,5 @@
+---
+
+  - include_tasks: >-
+      write_secrets/{{ _iter_save_sinks.value.sinkcfg.type }}.yml
+

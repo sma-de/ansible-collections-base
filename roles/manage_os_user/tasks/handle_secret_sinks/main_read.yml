@@ -1,0 +1,16 @@
+---
+
+  - set_fact:
+      _tmp_secret_readcfg: >-
+         {{ _iter_users.value.password.save_to_sinks._read_cfg }}
+    when: _tmp_secret_type == 'pw'
+
+  - set_fact:
+      _tmp_secret_readcfg: >-
+         {{ _iter_sshkeys.value.save_to_sinks._read_cfg }}
+    when: _tmp_secret_type == 'ssh'
+
+
+  - include_tasks: >-
+       read_secrets/{{ _tmp_secret_readcfg.type }}.yml
+

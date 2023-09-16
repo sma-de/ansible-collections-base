@@ -1,0 +1,107 @@
+---
+
+  - set_fact:
+      _tmp_user_new_sshkey_private:
+      _tmp_user_new_sshkey_pub:
+      _tmp_secret_type: ssh
+
+
+  - name: use predefined ssh key(s)
+    set_fact:
+      _tmp_user_new_sshkey_pub: >-
+         {{ _iter_sshkeys.value.ssh_keys.public }}
+      _tmp_user_new_sshkey_private: >-
+         {{ _iter_sshkeys.value.ssh_keys.private }}
+    when: >-
+      _iter_sshkeys.value.ssh_keys.public is truthy
+    no_log: true
+
+
+  - block:
+
+     - name: try reading current sshkey from source/sink
+       include_tasks: handle_secret_sinks/main_read.yml
+       when: >-
+          _iter_sshkeys.value.autogen.cycle is falsy
+          and _iter_sshkeys.value.save_to_sinks._read_cfg is truthy
+
+
+     - block:
+
+         ##
+         ## note: we dont want to ultimately have the keypair on the target
+         ##   system, but the crypto module unfortunately always enforces
+         ##   remote files, so we put them into a tmp dir, generate them,
+         ##   read them and finally remove the tmp dir
+         ##
+
+         - name: create tmp sshkey gen dir
+           ansible.builtin.tempfile:
+             state: directory
+           register: _tmpdir_ssh_keygen
+
+
+         - set_fact:
+             _tmp_modargs: >-
+               {{ _iter_sshkeys.value.configs.gen
+                | combine({'path': _tmpdir_ssh_keygen.path ~ '/key'}) }}
+
+         - name: create new ssh key pair
+           community.crypto.openssh_keypair: "{{ _tmp_modargs }}"
+           register: _tmp_modres_gen_sshkey
+
+
+         - name: read generated private key from remote
+           ansible.builtin.slurp:
+             src: "{{ _tmp_modres_gen_sshkey.filename }}"
+           register: _tmp_modres_read_privkey
+           no_log: true
+
+
+         - name: read generated public key from remote
+           ansible.builtin.slurp:
+             src: "{{ _tmp_modres_gen_sshkey.filename }}.pub"
+           register: _tmp_modres_read_pubkey
+
+
+         - set_fact:
+             _tmp_user_new_sshkey_private: >-
+                {{ _tmp_modres_read_privkey.content | b64decode }}
+             _tmp_user_new_sshkey_pub: >-
+                {{ _tmp_modres_read_pubkey.content  | b64decode }}
+           no_log: true
+
+
+         - name: remove ssh keygen tmp dir again
+           ansible.builtin.file:
+             path: "{{ _tmpdir_ssh_keygen.path }}"
+             state: absent
+
+       when: >-
+         _iter_sshkeys.value.autogen.cycle is truthy
+         or _tmp_user_new_sshkey_pub is falsy
+
+    when: _iter_sshkeys.value.autogen.enabled is truthy
+
+
+  - name: collect new secrets for later saving
+    include_tasks: handle_secret_sinks/main_collect_secrets.yml
+    loop: "{{ _iter_sshkeys.value.save_to_sinks.sinks | dict2items }}"
+    loop_control:
+      loop_var: _iter_save_sinks
+
+
+  - name: check if sshkey was succesfully generated / read
+    ansible.builtin.assert:
+      that:
+        - _tmp_user_new_sshkey_pub is truthy
+      fail_msg: >-
+        user sshkey failed to be generated / read
+
+
+  - set_fact:
+      _tmp_user_sshkeys_pub: >-
+         {{ _tmp_user_sshkeys_pub + [ _iter_sshkeys.value.configs.auth
+              | combine({'key': _tmp_user_new_sshkey_pub})
+           ] }}
+
