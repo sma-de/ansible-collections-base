@@ -1,0 +1,16 @@
+---
+
+##
+## role which handles installation of custom nodejs versions
+## which are not avaible as default distro package
+##
+## smabot_base_custom_apt_sources_args: TODO -> examples
+##
+
+  - name: get / update source signing key
+    ansible.builtin.get_url: "{{ _iter_apt_sources.signing.config }}"
+    when: _iter_apt_sources.signing is truthy
+
+  - name: add / modify / delete apt source
+    ansible.builtin.apt_repository: "{{ _iter_apt_sources.config }}"
+

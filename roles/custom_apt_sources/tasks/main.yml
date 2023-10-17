@@ -1,0 +1,30 @@
+---
+
+##
+## role which handles installation of custom nodejs versions
+## which are not avaible as default distro package
+##
+## smabot_base_custom_apt_sources_args: TODO -> examples
+##
+
+
+  - smabot.base.normalize_custom_apt_sources_args:
+    register: _tmp_normed_cfg
+
+  - set_fact:
+      smabot_base_custom_apt_sources_args_normed: "{{ _tmp_normed_cfg.normalized }}"
+
+
+  - name: ensure all needed packages are installed
+    ansible.builtin.apt:
+      name: ca-certificates
+      state: present
+    when: smabot_base_custom_apt_sources_args_normed._export_lst is truthy
+
+
+  - include_tasks: handle_source.yml
+    loop: >-
+      {{ smabot_base_custom_apt_sources_args_normed._export_lst }}
+    loop_control:
+      loop_var: _iter_apt_sources
+
