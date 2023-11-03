@@ -40,6 +40,10 @@
       name: systemd-timesyncd.service
       state: stopped
       enabled: no
+    register: _tmp_modres
+    failed_when: >-
+       _tmp_modres is failed and
+       'not find the requested service' not in _tmp_modres.msg
     when: smabot_base_ntp_chrony_args_normed.ntp.enabled
 
 
