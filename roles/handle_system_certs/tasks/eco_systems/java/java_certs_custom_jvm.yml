@@ -11,6 +11,7 @@
   ##
 
 
+    ## TODO: default location is os specific, current default works for debian and alpine based systems
   - set_fact:
       os_trust_store_java: >-
         {{ os_trust_store_java

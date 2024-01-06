@@ -4,11 +4,20 @@
       _tmp_java_cert_handled: true
 
 
-  - name: ensure that java cert package is installed
-    package: 
+  - name: ensure java cert package is installed
+    ansible.builtin.package:
       name: 
         - ca-certificates-java
       state: present
+
+
+  - name: ensure java os cert store is up to date
+    ansible.builtin.command:
+      argv:
+        - update-ca-certificates
+
+    ## as always prefer never changers bevor always changers
+    change_when: false
 
 
   - include_tasks: java_certs_debian_loop.yml
