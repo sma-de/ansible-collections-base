@@ -18,7 +18,8 @@
     ##
     run_once: true
     delegate_to: >-
-      {{ _iter_users.value.secret_handler | default(omit, True) }}
+      {{ _iter_users.value.secret_handler
+       | default((ansible_play_batch | first), True) }}
 
 
   - include_tasks: auth_sshkeys.yml
