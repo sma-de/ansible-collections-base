@@ -149,7 +149,7 @@ class JavaNormer(NormalizerBase):
               str(pathlib.Path(dest['path']) / dest['binpath'])
             )
 
-            setdefault_none(tmp, 'regexp', r'^(?i)(\s*use_embedded_jre=).*')
+            setdefault_none(tmp, 'regexp', r'(?i)^(\s*use_embedded_jre=).*')
 
             l = setdefault_none(tmp, 'line', r'\g<1>{}')
             tmp['line'] = l.format('false')
