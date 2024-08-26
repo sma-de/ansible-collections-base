@@ -34,10 +34,9 @@
 
 
   - name: assure necessary python packages are installed
-    ansible.builtin.pip:
-      name: "{{ smabot_base_setup_sonarscan_args_normed.get('_pip_installs', []) }}"
-      state: present
-    when: smabot_base_setup_sonarscan_args_normed.get('_pip_installs', False)
+    ansible.builtin.pip: >-
+      {{ smabot_base_setup_sonarscan_args_normed.requirements.pip.config }}
+    when: smabot_base_setup_sonarscan_args_normed.requirements.pip.enabled
 
 
   - name: install scanner from archive file

@@ -55,6 +55,8 @@ class RootCfgNormalizer(NormalizerBase):
           OsPackageNormer(pluginref),
           DownloadNormer(pluginref),
           SupportsNormer(pluginref),
+
+          RequirementsPipNormer(pluginref),
         ]
 
         super(RootCfgNormalizer, self).__init__(pluginref, *args, **kwargs)
@@ -87,6 +89,31 @@ class RootCfgNormalizer(NormalizerBase):
         my_subcfg['syspath'] = {
           'present': [str(instpath / 'bin')],
         }
+
+        return my_subcfg
+
+
+
+class RequirementsPipNormer(NormalizerBase):
+
+    @property
+    def config_path(self):
+        return ['requirements', 'pip']
+
+    def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
+        pcfg = self.get_parentcfg(cfg, cfgpath_abs, level=2)
+        plst = pcfg.pop('_pip_installs', None)
+
+        my_subcfg['enabled'] = True
+
+        if not plst:
+            my_subcfg['enabled'] = False
+            return my_subcfg
+
+        c = setdefault_none(my_subcfg, 'config', {})
+
+        c['state'] = 'present'
+        c['name'] = plst
 
         return my_subcfg
 
