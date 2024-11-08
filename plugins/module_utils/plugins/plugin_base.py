@@ -15,8 +15,9 @@ import abc
 import collections
 import copy
 import re
+import os
 
-from ansible.errors import AnsibleError, AnsibleInternalError, AnsibleOptionsError
+from ansible.errors import AnsibleError, AnsibleInternalError, AnsibleOptionsError, AnsibleUndefinedVariable
 from ansible.module_utils.basic import missing_required_lib
 from ansible.module_utils._text import to_native
 from ansible.module_utils.six import iteritems
@@ -152,6 +153,28 @@ class ArgsPlugin():
     @property
     def error_prefix(self):
         return ''
+
+
+    def query_controller_env(self, *envvars,
+        defval=KWARG_UNSET, force_list=False
+    ):
+        res = []
+
+        for e in envvars:
+            ev = os.environ.get(e, defval)
+
+            if ev == KWARG_UNSET:
+                raise AnsibleUndefinedVariable(
+                   "mandatory environment variable named '{}'"\
+                   " could not be found in controller environment".format(e)
+                )
+
+            res.append(ev)
+
+        if len(res) == 1 and not force_list:
+            return res[0]
+
+        return res
 
 
     def get_taskparam(self, name):
