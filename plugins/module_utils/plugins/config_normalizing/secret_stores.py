@@ -7,7 +7,11 @@ from ansible.errors import AnsibleOptionsError
 from ansible.module_utils.six import iteritems
 from ansible.utils.display import Display
 
-from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normalizing.base import NormalizerBase, DefaultSetterConstant
+from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normalizing.base import\
+  NormalizerBase,\
+  NormalizerNamed,\
+  DefaultSetterConstant
+
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import SUBDICT_METAKEY_ANY, setdefault_none
 
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import get_subdict, merge_dicts
