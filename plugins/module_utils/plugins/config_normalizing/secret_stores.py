@@ -307,7 +307,7 @@ class CredentialStoreInstNormer(NormalizerNamed):
             ansible_assert(self.default_basevar,
                "mandatory key parameter for ansible-variable credential"\
                " backend store not defined, either define it explicitly"\
-               " or ensure normaliser class has a default set or"\
+               " or ensure normalizer class has a default set or"\
                " disable this store"
             )
 
