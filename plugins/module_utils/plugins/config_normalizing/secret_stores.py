@@ -232,14 +232,14 @@ class CredentialSettingsNormerBase(NormalizerBase):
 class UserCredsDefaults_Normer(CredentialSettingsNormerBase):
 
     def __init__(self, pluginref, *args, config_path=None, **kwargs):
-        self.config_path = config_path or ['credentials', 'default_settings']
+        self._config_path = config_path or ['credentials', 'default_settings']
 
         super(UserCredsDefaults_Normer, self).__init__(
            pluginref, *args, **kwargs
         )
     @property
     def config_path(self):
-        return self.config_path
+        return self._config_path
 
     @property
     def has_value(self):
