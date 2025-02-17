@@ -332,3 +332,7 @@ def setdefault_none(d, key, defval=None, defval_fn=None):
 
       return v
 
+
+def transpose_map(mapping):
+    return dict((v, k) for k, v in mapping.items())
+
