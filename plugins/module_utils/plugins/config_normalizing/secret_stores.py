@@ -30,14 +30,18 @@ display = Display()
 
 class CredentialSettingsNormerBase(NormalizerBase):
 
-    def __init__(self, pluginref, *args, cycle_default=False, **kwargs):
+    def __init__(self, pluginref, *args,
+        cycle_default=False, credstore_normer_kwargs=None, **kwargs
+    ):
         self._add_defaultsetter(kwargs, 
           'stores', DefaultSetterConstant({})
         )
 
         subnorms = kwargs.setdefault('sub_normalizers', [])
         subnorms += [
-          CredentialStoreInstNormer(pluginref),
+          CredentialStoreInstNormer(pluginref,
+              **(credstore_normer_kwargs or {})
+          ),
         ]
 
         self.cycle_default = cycle_default
@@ -270,7 +274,7 @@ class UserCredsDefaults_Normer(CredentialSettingsNormerBase):
 
 class CredentialStoreInstNormer(NormalizerNamed):
 
-    def __init__(self, pluginref, *args, **kwargs):
+    def __init__(self, pluginref, *args, default_basevar=None, **kwargs):
         self._add_defaultsetter(kwargs, 
           'default', DefaultSetterConstant(False)
         )
@@ -279,14 +283,15 @@ class CredentialStoreInstNormer(NormalizerNamed):
           'parameters', DefaultSetterConstant({})
         )
 
+        self._default_basevar = default_basevar
+
         super(CredentialStoreInstNormer, self).__init__(
            pluginref, *args, **kwargs
         )
 
     @property
-    ##@abc.abstractmethod ## overwrite not working, why????
     def default_basevar(self):
-        raise Exception("must be overriden")
+        return self._default_basevar
 
     @property
     def config_path(self):
@@ -296,7 +301,17 @@ class CredentialStoreInstNormer(NormalizerNamed):
     def _handle_specifics_presub_ansible_variables(self, cfg, my_subcfg, cfgpath_abs):
         vnames = setdefault_none(my_subcfg['parameters'], 'key_names', {})
 
-        setdefault_none(vnames, 'basevar', self.default_basevar)
+        bvar = vnames.get('basevar', None)
+
+        if not bvar:
+            ansible_assert(self.default_basevar,
+               "mandatory key parameter for ansible-variable credential"\
+               " backend store not defined, either define it explicitly"\
+               " or ensure normaliser class has a default set or"\
+               " disable this store"
+            )
+
+            vnames['basevar'] = self.default_basevar
 
         setdefault_none(vnames, 'password', 'password')
         setdefault_none(vnames, 'sshkey_public', 'sshkey_public_{cred_id}')
