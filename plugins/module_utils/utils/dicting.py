@@ -336,3 +336,8 @@ def setdefault_none(d, key, defval=None, defval_fn=None):
 def transpose_map(mapping):
     return dict((v, k) for k, v in mapping.items())
 
+
+class SafeDict(dict):
+    def __missing__(self, key):
+        return '{' + key + '}'
+
