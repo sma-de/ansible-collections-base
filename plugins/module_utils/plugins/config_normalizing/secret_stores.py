@@ -283,8 +283,8 @@ class CredentialStoreInstNormer(NormalizerNamed):
            pluginref, *args, **kwargs
         )
 
-    @property
     @abc.abstractmethod
+    @property
     def default_basevar(self):
         pass
 
