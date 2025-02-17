@@ -284,9 +284,9 @@ class CredentialStoreInstNormer(NormalizerNamed):
         )
 
     @property
-    @abc.abstractmethod
+    ##@abc.abstractmethod ## overwrite not working, why????
     def default_basevar(self):
-        pass
+        raise Exception("must be overriden")
 
     @property
     def config_path(self):
