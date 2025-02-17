@@ -196,6 +196,12 @@ class CredentialSettingsNormerBase(NormalizerBase):
 
 
     def _handle_specifics_postsub(self, cfg, my_subcfg, cfgpath_abs):
+        pcfg = self.get_parentcfg(cfg, cfgpath_abs)
+
+        import json
+        display.vvv("post norm pw inst cred, my parent cfg:\n{}".format(json.dumps(pcfg, indent=2)))
+        display.vvv("post norm pw inst cred, my cfg:\n{}".format(json.dumps(my_subcfg, indent=2)))
+
         ## optionally normalize adapt generic cred stores settings
         ## to specific credential
         for k,v in my_subcfg.get('stores', {}).items():
