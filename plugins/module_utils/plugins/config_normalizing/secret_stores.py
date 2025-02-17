@@ -65,6 +65,10 @@ class CredentialSettingsNormerBase(NormalizerBase):
     def default_stores(self):
         return {'ansible_variables': None}
 
+    @property
+    def default_settings_subpath(self):
+        return ['default_settings']
+
 
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
         if self.default_settings_distance:
@@ -72,9 +76,10 @@ class CredentialSettingsNormerBase(NormalizerBase):
               level=self.default_settings_distance
             )
 
-            my_subcfg = merge_dicts(copy.deepcopy(
-               pcfg['default_settings']), my_subcfg
-            )
+            for k in self.default_settings_subpath:
+                pcfg = pcfg[k]
+
+            my_subcfg = merge_dicts(copy.deepcopy(pcfg), my_subcfg)
 
         ac = my_subcfg.get('auto_create', None)
         value = None
@@ -226,9 +231,15 @@ class CredentialSettingsNormerBase(NormalizerBase):
 
 class UserCredsDefaults_Normer(CredentialSettingsNormerBase):
 
+    def __init__(self, pluginref, *args, config_path=None, **kwargs):
+        self.config_path = config_path or ['credentials', 'default_settings']
+
+        super(UserCredsDefaults_Normer, self).__init__(
+           pluginref, *args, **kwargs
+        )
     @property
     def config_path(self):
-        return ['credentials', 'default_settings']
+        return self.config_path
 
     @property
     def has_value(self):
