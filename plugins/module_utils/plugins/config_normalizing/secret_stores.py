@@ -76,12 +76,6 @@ class CredentialSettingsNormerBase(NormalizerBase):
 
 
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
-        pcfg = self.get_parentcfg(cfg, cfgpath_abs)
-
-        import json
-        display.vvv("norm pw inst cred, my parent cfg:\n{}".format(json.dumps(pcfg, indent=2)))
-        display.vvv("norm pw inst cred, my cfg:\n{}".format(json.dumps(my_subcfg, indent=2)))
-
         if self.default_settings_distance:
             pcfg = self.get_parentcfg(cfg, cfgpath_abs,
               level=self.default_settings_distance
@@ -90,11 +84,7 @@ class CredentialSettingsNormerBase(NormalizerBase):
             for k in self.default_settings_subpath:
                 pcfg = pcfg[k]
 
-            display.vvv("norm pw inst cred, defaults to merge:\n{}".format(json.dumps(pcfg, indent=2)))
-
             my_subcfg = merge_dicts(copy.deepcopy(pcfg), my_subcfg)
-
-            display.vvv("norm pw inst cred, my cfg psot def merge:\n{}".format(json.dumps(my_subcfg, indent=2)))
 
         ac = my_subcfg.get('auto_create', None)
         value = None
@@ -111,7 +101,6 @@ class CredentialSettingsNormerBase(NormalizerBase):
             ## assume simple bool
             ac = {'enabled': ac}
 
-        display.vvv("da ac:\n{}".format(ac))
         setdefault_none(ac, 'enabled', True)
 
         ansible_assert(value or ac['enabled'],
@@ -127,8 +116,6 @@ class CredentialSettingsNormerBase(NormalizerBase):
 
         setdefault_none(ac, 'cycle', self.cycle_default)
         my_subcfg['auto_create'] = ac
-
-        display.vvv("norm pw inst cred, my cfg psot ac set:\n{}".format(json.dumps(my_subcfg, indent=2)))
 
         auto_vers = ac.get('versions')
 
@@ -197,12 +184,6 @@ class CredentialSettingsNormerBase(NormalizerBase):
 
 
     def _handle_specifics_postsub(self, cfg, my_subcfg, cfgpath_abs):
-        pcfg = self.get_parentcfg(cfg, cfgpath_abs)
-
-        import json
-        display.vvv("post norm pw inst cred, my parent cfg:\n{}".format(json.dumps(pcfg, indent=2)))
-        display.vvv("post norm pw inst cred, my cfg:\n{}".format(json.dumps(my_subcfg, indent=2)))
-
         ## optionally normalize adapt generic cred stores settings
         ## to specific credential
         for k,v in my_subcfg.get('stores', {}).items():
