@@ -59,10 +59,6 @@ class CredentialSettingsNormerBase(NormalizerBase):
         return True
 
     @property
-    def enable_default_stores(self):
-        return False
-
-    @property
     def stores_mandatory(self):
         return False
 
