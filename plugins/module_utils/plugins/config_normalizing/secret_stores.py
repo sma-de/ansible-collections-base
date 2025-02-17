@@ -16,6 +16,7 @@ from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normali
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import SUBDICT_METAKEY_ANY, setdefault_none
 
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import get_subdict, merge_dicts
+from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert
 
 
 display = Display()
