@@ -2,6 +2,7 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import abc
 import collections
 import copy
 
@@ -306,6 +307,11 @@ class CredentialStoreInstNormer(NormalizerNamed):
         )
 
     @property
+    @abc.abstractmethod
+    def default_basevar(self):
+        pass
+
+    @property
     def config_path(self):
         return ['stores', SUBDICT_METAKEY_ANY]
 
@@ -313,9 +319,7 @@ class CredentialStoreInstNormer(NormalizerNamed):
     def _handle_specifics_presub_ansible_variables(self, cfg, my_subcfg, cfgpath_abs):
         vnames = setdefault_none(my_subcfg['parameters'], 'key_names', {})
 
-        setdefault_none(vnames, 'basevar',
-          'smabot_git_gitserver_manage_users_credentials'
-        )
+        setdefault_none(vnames, 'basevar', self.default_basevar)
 
         setdefault_none(vnames, 'password', 'password')
         setdefault_none(vnames, 'sshkey_public', 'sshkey_public_{cred_id}')
