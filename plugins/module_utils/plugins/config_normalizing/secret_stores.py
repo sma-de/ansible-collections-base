@@ -34,6 +34,10 @@ class CredentialSettingsNormerBase(NormalizerBase):
         cycle_default=False, credstore_normer_kwargs=None, **kwargs
     ):
         self._add_defaultsetter(kwargs, 
+          'enable_default_stores', DefaultSetterConstant(None)
+        )
+
+        self._add_defaultsetter(kwargs, 
           'stores', DefaultSetterConstant({})
         )
 
@@ -123,12 +127,20 @@ class CredentialSettingsNormerBase(NormalizerBase):
             c = setdefault_none(my_subcfg, 'config', {})
             c['versions'] = auto_vers
 
-        if self.storeable:
-            stores = my_subcfg.get('stores', None)
+        if self.storeable and my_subcfg['auto_create']['enabled']:
+            ena_defstores = my_subcfg['enable_default_stores']
+            stores = my_subcfg['stores']
 
-            if my_subcfg['auto_create']['enabled'] and not stores:
+            ## if not set otherwise on default the default stores
+            ## are only added when no other explicit stores
+            ## are given by config
+            if ena_defstores is None:
+                ena_defstores = not stores
+                my_subcfg['enable_default_stores'] = ena_defstores
+
+            if ena_defstores:
                 # create ansible variable default store
-                stores = self.default_stores
+                stores = merge_dicts(stores, self.default_stores)
                 my_subcfg['stores'] = stores
 
         return my_subcfg
