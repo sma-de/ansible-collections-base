@@ -6,6 +6,11 @@
 ##
 ## smabot_base_custom_apt_sources_args: TODO -> examples
 ##
+##
+## TODOS:
+##   -> support auto de-armoring, auto-decide if de-armor is necessary based on file type (TODO)
+##   -> wrap gpg stuff with a proper python ansible module (TODO)
+##
 
 
   - smabot.base.normalize_custom_apt_sources_args:
@@ -17,7 +22,10 @@
 
   - name: ensure all needed packages are installed
     ansible.builtin.apt:
-      name: ca-certificates
+      install_recommends: false
+      name:
+        - ca-certificates
+        - gpg
       state: present
     when: smabot_base_custom_apt_sources_args_normed._export_lst is truthy
 
