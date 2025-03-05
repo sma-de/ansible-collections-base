@@ -164,7 +164,7 @@ class SourcesInstSigningNormer(NormalizerBase):
 
         dest = my_subcfg['dest']
 
-        if fprints:
+        if fprints or my_subcfg['de_armor']:
             dest = dest.split('.')
 
             ##
@@ -175,6 +175,8 @@ class SourcesInstSigningNormer(NormalizerBase):
             ##   or it will not be handled correctly by apt and
             ##   you will get "NO_PUBKEY" errors although the
             ##   file contains the needed keys!!!
+            ##
+            ## update: same is true for de-armored keys!!
             ##
             if dest[-1] != 'gpg':
                 if len(dest) > 1:
