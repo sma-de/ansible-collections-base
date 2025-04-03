@@ -336,11 +336,13 @@ class CredentialStoreInstNormer(NormalizerNamed):
 
 
     def _handle_specifics_presub_hashivault(self, cfg, my_subcfg, cfgpath_abs):
+        reversable = setdefault_none(my_subcfg, 'reversable', True)
+
         my_subcfg = self._handle_specifics_presub_ansible_variables(
           cfg, my_subcfg, cfgpath_abs
         )
 
-        setdefault_none(my_subcfg, 'reversable', True)
+        my_subcfg['reversable'] = reversable
         setdefault_none(my_subcfg, 'config', {})
 
         params = my_subcfg['parameters']
