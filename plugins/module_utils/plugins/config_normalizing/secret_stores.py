@@ -80,10 +80,14 @@ class CredentialSettingsNormerBase(NormalizerBase):
 
 
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
+        display.vv("da default setting distance => {}".format(self.default_settings_distance))
         if self.default_settings_distance:
             pcfg = self.get_parentcfg(cfg, cfgpath_abs,
               level=self.default_settings_distance
             )
+
+            display.vv("da pcfg => {}".format(id(pcfg)))
+            display.vv("da pcfg => {}".format(pcfg))
 
             for k in self.default_settings_subpath:
                 pcfg = pcfg[k]
