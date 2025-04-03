@@ -311,6 +311,8 @@ class CredentialStoreInstNormer(NormalizerNamed):
 
 
     def _handle_specifics_presub_ansible_variables(self, cfg, my_subcfg, cfgpath_abs):
+        my_subcfg['reversable'] = False
+
         vnames = setdefault_none(my_subcfg['parameters'], 'key_names', {})
 
         bvar = vnames.get('basevar', None)
@@ -338,6 +340,7 @@ class CredentialStoreInstNormer(NormalizerNamed):
           cfg, my_subcfg, cfgpath_abs
         )
 
+        setdefault_none(my_subcfg, 'reversable', True)
         setdefault_none(my_subcfg, 'config', {})
 
         params = my_subcfg['parameters']
