@@ -407,6 +407,9 @@ class NormalizerBase(abc.ABC):
             subcfg = self._handle_sub_normalizers(global_cfg, subcfg, sp_abs)
             subcfg = self._handle_specifics_postsub(global_cfg, subcfg, sp_abs)
 
+            display.vv("final subcfg: {}".format(subcfg))
+            display.vv("cur config final: {}".format(config))
+
             if subpath:
                 set_subdict(config, subpath, subcfg)
 
