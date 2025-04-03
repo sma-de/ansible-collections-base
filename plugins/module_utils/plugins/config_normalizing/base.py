@@ -401,6 +401,8 @@ class NormalizerBase(abc.ABC):
                 subcfg = a
 
             subcfg = self._handle_default_setters(global_cfg, subcfg, sp_abs)
+            display.vv("parent cfg b4f pre: {}".format(id(config)))
+            display.vv("parent cfg b4f pre: {}".format(config))
             display.vv("subcfg b4f pre: {}".format(id(subcfg)))
             subcfg = self._handle_specifics_presub(global_cfg, subcfg, sp_abs)
             display.vv("subcfg after pre: {}".format(id(subcfg)))
@@ -408,6 +410,7 @@ class NormalizerBase(abc.ABC):
             subcfg = self._handle_specifics_postsub(global_cfg, subcfg, sp_abs)
 
             display.vv("final subcfg: {}".format(subcfg))
+            display.vv("cur config final: {}".format(id(config)))
             display.vv("cur config final: {}".format(config))
 
             if subpath:
