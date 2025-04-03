@@ -401,7 +401,9 @@ class NormalizerBase(abc.ABC):
                 subcfg = a
 
             subcfg = self._handle_default_setters(global_cfg, subcfg, sp_abs)
+            display.vv("subcfg b4f pre: {}".format(id(subcfg)))
             subcfg = self._handle_specifics_presub(global_cfg, subcfg, sp_abs)
+            display.vv("subcfg after pre: {}".format(id(subcfg)))
             subcfg = self._handle_sub_normalizers(global_cfg, subcfg, sp_abs)
             subcfg = self._handle_specifics_postsub(global_cfg, subcfg, sp_abs)
 
