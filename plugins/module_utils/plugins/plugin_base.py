@@ -123,7 +123,9 @@ def check_paramtype(param, value, typespec, errmsg):
         )
 
     if isinstance(value, list):
-        ansible_assert(sub_types is not None, 'bad typespec')
+        ansible_assert(sub_types is not None,
+            'bad typespec: found list type without subtypes'
+        )
 
         display.vvv(
           "[PLUGIN] :: handle args, do subtype check: {}".format(sub_types)

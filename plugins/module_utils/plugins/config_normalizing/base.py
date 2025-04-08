@@ -402,7 +402,15 @@ class NormalizerBase(abc.ABC):
 
             subcfg = self._handle_default_setters(global_cfg, subcfg, sp_abs)
             subcfg = self._handle_specifics_presub(global_cfg, subcfg, sp_abs)
+
+            if subpath:
+                set_subdict(config, subpath, subcfg)
+
             subcfg = self._handle_sub_normalizers(global_cfg, subcfg, sp_abs)
+
+            if subpath:
+                set_subdict(config, subpath, subcfg)
+
             subcfg = self._handle_specifics_postsub(global_cfg, subcfg, sp_abs)
 
             if subpath:
