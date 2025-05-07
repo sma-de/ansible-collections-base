@@ -30,7 +30,19 @@ display = Display()
 
 
 KWARG_UNSET = object()
+
 MAGIC_ARGSPECKEY_META = '___args_meta'
+MAGIC_ARGSPECKEY_METASUB_UNKNOWN_ARGS = 'unknown_args'
+MAGIC_ARGSPECVAL_UNKNOWNARGS_PASSTHROUGH = 'passthrough'
+
+
+def argspec_set_options(argspec, unknown_args_handler=None):
+    if unknown_args_handler:
+        meta_spec = argspec.get(MAGIC_ARGSPECKEY_META, None) or {}
+        meta_spec[MAGIC_ARGSPECKEY_METASUB_UNKNOWN_ARGS] = unknown_args_handler
+        argspec[MAGIC_ARGSPECKEY_META] = meta_spec
+
+    return argspec
 
 
 def default_param_value(pname, defcfg, ans_varspace, templater):
@@ -193,7 +205,7 @@ class ArgsPlugin():
 
         args_found = {}
 
-        args_meta = argspec.pop(MAGIC_ARGSPECKEY_META, {})
+        args_meta = argspec.pop(MAGIC_ARGSPECKEY_META, None) or {}
 
         for (k, v) in iteritems(argspec):
             display.vv(
@@ -243,7 +255,7 @@ class ArgsPlugin():
                 v = { 'type': v }
 
             # normalize norm form
-            ansible_assert('type' in v, 
+            ansible_assert('type' in v,
               "Bad argspec for param '{}': Mandatory type field missing".format(k)
             )
 
@@ -263,7 +275,7 @@ class ArgsPlugin():
             )
 
             for x in [k] + aliases:
-                ansible_assert(x not in args_found, 
+                ansible_assert(x not in args_found,
                   "Bad argspec for param '{}': duplicate alias"
                   " name '{}'".format(k, x)
                 )
@@ -338,9 +350,31 @@ class ArgsPlugin():
                 self._handle_taskargs(subspec, pval, pval)
 
         if args_set:
-            raise AnsibleOptionsError(
-              "Unsupported parameters given: {}".format(list(args_set.keys()))
+            handler = args_meta.get(
+                MAGIC_ARGSPECKEY_METASUB_UNKNOWN_ARGS, None
             )
+
+            if not handler:
+                raise AnsibleOptionsError(
+                  "Unsupported parameters given: {}".format(
+                    list(args_set.keys())
+                  )
+                )
+
+            if handler == MAGIC_ARGSPECVAL_UNKNOWNARGS_PASSTHROUGH:
+                ## if optionally requested, it is possible to pass given
+                ## arguments through simple and dumb without any
+                ## conversion / checking, mainly intended for wrapper
+                ## modules / action which call another module / action
+                ## internally, so one dont have to explicitly list all
+                ## arguments of the internal wrapped module
+                args_out.update(args_set)
+            else:
+                raise AnsibleOptionsError(
+                  "Unsupported unknown args / params handler mode: '{}'".format(
+                    handler
+                  )
+                )
 
         ## check mutual exclusions:
         for exlst in args_meta.get('mutual_exclusions', []):
