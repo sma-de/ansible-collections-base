@@ -30,6 +30,8 @@ from ansible.module_utils.six import iteritems
 
 from ansible_collections.smabot.base.plugins.module_utils.plugins.lookup_base import BaseLookup
 
+from ansible_collections.community.general.plugins.filter import version_sort
+
 
 display = Display()
 
@@ -92,9 +94,24 @@ class LookupModule(BaseLookup):
 
 
     def _subfn_get_versions(self, info_json, 
-        subselect=None, force_list=False
+        subselect=None, force_list=False, pre_releases=True
     ):
         res = list(info_json['releases'].keys())
+
+        if not pre_releases:
+            ## optionally filter out pre - releases
+            from packaging import version as pack_version
+
+            res = list(filter(
+                lambda x: not pack_version.parse(x).is_prerelease, res
+            ))
+
+        ##
+        ## note: our initial assumption that upstream api guarantees
+        ##   proper ordering of versions was incorrect, so ensure
+        ##   proper ordering by explicit sorting here
+        ##
+        res = version_sort.version_sort(res)
 
         if not subselect:
             return res
