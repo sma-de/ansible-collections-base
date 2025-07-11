@@ -333,12 +333,13 @@ class ActionModule(BaseAction):
         active_dyn_profiles = os.environ.get('SMABOT_BASE_DYNPROFILES', None)
 
         if active_dyn_profiles:
-            active_dyn_profiles = re.split('\s+', active_dyn_profiles.strip())
+            active_dyn_profiles = re.split(
+                r'\s+', active_dyn_profiles.strip()
+            )
 
         for iv in tmp:
-
-            ## if inmap value is kust a plain string, assume it 
-            ##   is the invar name and normalize it to a dict
+            ## if inmap value is just a plain string, assume it
+            ## is the invar name and normalize it to a dict
             if isinstance(iv, string_types):
                 iv = {'name': iv}
 
