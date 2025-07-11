@@ -74,7 +74,7 @@ def template_recursive(mapping, templater,
         matches = []
         obj = False
 
-        for m in re.finditer(SELFREF_START + '\s*(\S*)\s*' + SELFREF_END, v):
+        for m in re.finditer(SELFREF_START + r'\s*(\S*)\s*' + SELFREF_END, v):
             selfref_key = m.group(1)
 
             ansible_assert(selfref_key, 
