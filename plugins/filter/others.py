@@ -42,11 +42,24 @@ class VersionSortFilter(FilterBase):
         return tmp
 
 
-    def _method_int_tuples(self, x, versep=r'\.', **kwargs):
+    def _method_int_tuples(self, x, versep=r'\.', sortkey=None, **kwargs):
         # expects input values to be either already a list/tuple
         # representing each version component or a plain string
         # in which case the string is splitted by sep into a
         # list of single ver components
+
+        # update: if the element is a mapping, it will resolve to the
+        #   value of the given sortkey or raise an error if no sortkey
+        #   was defined
+        if isinstance(x, collections.abc.Mapping):
+            if not sortkey:
+                raise AnsibleOptionsError(
+                    "list element is a mapping / dict which is only allowed"\
+                    " when sortkey is defined through method_args"
+                )
+
+            x = x[sortkey]
+
         if isinstance(x, string_types):
             x = re.split(versep, x)
 
