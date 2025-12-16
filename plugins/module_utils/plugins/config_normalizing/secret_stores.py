@@ -354,12 +354,25 @@ class CredentialStoreInstNormer(NormalizerNamed):
         psets_defs_read = setdefault_none(psets_defs, 'read', {})
 
         setdefault_none(psets_defs_read, 'optional', True)
-
         return my_subcfg
 
 
     def _handle_specifics_presub(self, cfg, my_subcfg, cfgpath_abs):
         stype = setdefault_none(my_subcfg, 'type', my_subcfg['name'])
+
+        ## optionally apply store defaults
+        pcfg = self.get_parentcfg(cfg, cfgpath_abs, level=2)
+        st_def = pcfg.get('store_defaults', {})
+
+        if st_def:
+            my_stdefs = {}
+
+            for x in ['all', stype]:
+                my_stdefs = merge_dicts(my_stdefs,
+                  copy.deepcopy(st_def.get(x, None) or {})
+                )
+
+            my_subcfg = merge_dicts(my_stdefs, my_subcfg)
 
         tmp = getattr(self, '_handle_specifics_presub_' + stype, None)
 
