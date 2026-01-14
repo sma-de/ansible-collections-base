@@ -6,6 +6,7 @@
 ##
 
   - set_fact:
+      _tmp_do_venv_run: false
       inside_other_venv: >-
         {{ (SMABOT_BASE_CURVENV_PATH | default(False)) is truthy }}
 
@@ -20,6 +21,7 @@
         register: _tmp_normed_cfg
 
       - set_fact:
+          _tmp_do_venv_run: true
           smabot_base_run_inside_venv_cfg_normed: >-
             {{ _tmp_normed_cfg.normalized }}
 
@@ -49,7 +51,7 @@
       - name: >-
           run ansible stuff inside venv
            ==>>  {{ smabot_base_run_inside_venv_cfg_normed.venv.path }}
-        include_role:
+        ansible.builtin.include_role:
           name: smabot.base.exec_custom_anspython
         vars:
           smabot_base_exec_custom_anspython_cfg:
@@ -95,4 +97,22 @@
     when: >-
       not inside_other_venv or
       (smabot_base_run_inside_venv_cfg.recurse_down | default(False))
+
+
+    ##
+    ## alt run block, do tasks and/or role without new venv
+    ##
+  - block:
+
+      - ansible.builtin.include_role:
+          name: "{{ smabot_base_run_inside_venv_cfg_normed.role }}"
+        when: >-
+          smabot_base_run_inside_venv_cfg_normed.role | default(False)
+
+      - ansible.builtin.include_tasks: >-
+          {{ smabot_base_run_inside_venv_cfg_normed.tasks }}
+        when: >-
+          smabot_base_run_inside_venv_cfg_normed.tasks | default(False)
+
+    when: not _tmp_do_venv_run
 
