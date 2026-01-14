@@ -25,8 +25,12 @@ display = Display()
 class RootCfgNormalizer(NormalizerBase):
 
     def __init__(self, pluginref, *args, **kwargs):
-        self._add_defaultsetter(kwargs, 
+        self._add_defaultsetter(kwargs,
           'keep_os_packages', DefaultSetterConstant(False)
+        )
+
+        self._add_defaultsetter(kwargs,
+          'recurse_down', DefaultSetterConstant(False)
         )
 
         subnorms = kwargs.setdefault('sub_normalizers', [])
@@ -41,15 +45,15 @@ class RootCfgNormalizer(NormalizerBase):
 class VenvCfgNormer(NormalizerBase):
 
     def __init__(self, pluginref, *args, **kwargs):
-        self._add_defaultsetter(kwargs, 
+        self._add_defaultsetter(kwargs,
           'site_packages', DefaultSetterConstant(True)
         )
 
-        self._add_defaultsetter(kwargs, 
+        self._add_defaultsetter(kwargs,
           'keep', DefaultSetterConstant(False)
         )
 
-        self._add_defaultsetter(kwargs, 
+        self._add_defaultsetter(kwargs,
           'path', DefaultSetterConstant(None)
         )
 
