@@ -4,11 +4,22 @@
 ## role which allows to run arbitrary ansible code 
 ## inside a python virtual env
 ##
+## update: avoiding venv-inside-venv here, basically
+##   after this role recalled itself a 2nd time is
+##   very hard and ugly because of role/taks-includes
+##   not being "functions" and later changes of the
+##   self named variable (fact) in combination with
+##   "when" conditioning can change "outer" role
+##   behaviour by "inner" role updates, we atm dont
+##   know any way to this here cleanly and proper
+##   which means that any caller of this role must
+##   check / avoid venv-inside-venv in their code
+##
 
-  - set_fact:
-      _tmp_do_venv_run: false
-      inside_other_venv: >-
-        {{ (SMABOT_BASE_CURVENV_PATH | default(False)) is truthy }}
+##  - set_fact:
+##      _tmp_do_venv_run: false
+##      inside_other_venv: >-
+##        {{ (SMABOT_BASE_CURVENV_PATH | default(False)) is truthy }}
 
 
     ##
@@ -94,25 +105,25 @@
       - set_fact:
           SMABOT_BASE_CURVENV_PATH:
 
-    when: >-
-      not inside_other_venv or
-      (smabot_base_run_inside_venv_cfg.recurse_down | default(False))
-
-
-    ##
-    ## alt run block, do tasks and/or role without new venv
-    ##
-  - block:
-
-      - ansible.builtin.include_role:
-          name: "{{ smabot_base_run_inside_venv_cfg_normed.role }}"
-        when: >-
-          smabot_base_run_inside_venv_cfg_normed.role | default(False)
-
-      - ansible.builtin.include_tasks: >-
-          {{ smabot_base_run_inside_venv_cfg_normed.tasks }}
-        when: >-
-          smabot_base_run_inside_venv_cfg_normed.tasks | default(False)
-
-    when: not _tmp_do_venv_run
+##    when: >-
+##      not inside_other_venv or
+##      (smabot_base_run_inside_venv_cfg.recurse_down | default(False))
+##
+##
+##    ##
+##    ## alt run block, do tasks and/or role without new venv
+##    ##
+##  - block:
+##
+##      - ansible.builtin.include_role:
+##          name: "{{ smabot_base_run_inside_venv_cfg_normed.role }}"
+##        when: >-
+##          smabot_base_run_inside_venv_cfg_normed.role | default(False)
+##
+##      - ansible.builtin.include_tasks: >-
+##          {{ smabot_base_run_inside_venv_cfg_normed.tasks }}
+##        when: >-
+##          smabot_base_run_inside_venv_cfg_normed.tasks | default(False)
+##
+##    when: not _tmp_do_venv_run
 
