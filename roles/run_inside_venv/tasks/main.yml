@@ -5,12 +5,7 @@
 ## inside a python virtual env
 ##
 
-  - smabot.base.normalize_inside_venv_cfg:
-    register: _tmp_normed_cfg
-
   - set_fact:
-      smabot_base_run_inside_venv_cfg_normed: >-
-        {{ _tmp_normed_cfg.normalized }}
       inside_other_venv: >-
         {{ (SMABOT_BASE_CURVENV_PATH | default(False)) is truthy }}
 
@@ -20,6 +15,14 @@
     ## totally unnecessary, avoid this on default
     ##
   - block:
+
+      - smabot.base.normalize_inside_venv_cfg:
+        register: _tmp_normed_cfg
+
+      - set_fact:
+          smabot_base_run_inside_venv_cfg_normed: >-
+            {{ _tmp_normed_cfg.normalized }}
+
 
       - name: publish active venv path
         set_fact:
@@ -90,6 +93,6 @@
           SMABOT_BASE_CURVENV_PATH:
 
     when: >-
-      smabot_base_run_inside_venv_cfg_normed.recurse_down
-      or not inside_other_venv
+      not inside_other_venv or
+      (smabot_base_run_inside_venv_cfg.recurse_down | default(False))
 
