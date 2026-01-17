@@ -101,7 +101,7 @@ class BaseAction(ActionBase, AnsSpaceAndArgsPlugin):
            "[ACTION_PLUGIN] :: execute module args: {}".format(modargs)
         )
 
-        if modname == 'shell':
+        if modname == 'shell' or modname 'ansible.builtin.shell':
             ##
             ## for some strange reason executing shell here fails 
             ## internally, while using command works fine, luckily 
@@ -134,7 +134,7 @@ class BaseAction(ActionBase, AnsSpaceAndArgsPlugin):
             tmp.append(modargs.pop('cmd'))
 
             modargs['argv'] = tmp
-            modname = 'command'
+            modname = 'ansible.builtin.command'
 
         res = self._execute_module(module_name=modname, module_args=modargs,
             task_vars=ans_varspace or self._ansible_varspace
