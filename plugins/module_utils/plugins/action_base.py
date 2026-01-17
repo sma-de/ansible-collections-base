@@ -101,7 +101,7 @@ class BaseAction(ActionBase, AnsSpaceAndArgsPlugin):
            "[ACTION_PLUGIN] :: execute module args: {}".format(modargs)
         )
 
-        if modname == 'shell' or modname 'ansible.builtin.shell':
+        if modname == 'shell' or modname == 'ansible.builtin.shell':
             ##
             ## for some strange reason executing shell here fails 
             ## internally, while using command works fine, luckily 
