@@ -42,7 +42,14 @@
           SMABOT_BASE_CURVENV_PATH: "{{ smabot_base_run_inside_venv_cfg_normed.venv.path }}"
 
 
-      - name: assure necessary os packages are avaible
+      - name: ensure apt module is usable
+        ansible.builtin.package:
+          name:
+            - python3-apt
+        when: ansible_os_family == "Debian"
+
+
+      - name: ensure necessary os packages are avaible
         ansible.builtin.apt:
           name:
             - python3-venv
