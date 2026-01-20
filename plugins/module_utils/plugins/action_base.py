@@ -35,8 +35,19 @@ display = Display()
 
 class AnsibleInnerExecError(AnsibleError):
 
-    def __init__(self, calltype, call_id, inner_res):
-      super(AnsibleInnerExecError, self).__init__('')
+    def __init__(self, calltype, call_id, inner_res, msg=None):
+      if not msg:
+          if calltype == 'MODULE':
+              msg = "Calling ansible module '{}' failed: {}".format(
+                call_id, (inner_res or {}).get('msg', None) or ''
+              )
+
+          elif calltype == 'ACTION_PLUGIN':
+              msg = "Calling other ansible action plugin '{}' failed".format(
+                call_id
+              )
+
+      super(AnsibleInnerExecError, self).__init__(msg or '')
       self.inner_res = inner_res
       self.call_type = calltype
       self.call_id = call_id
