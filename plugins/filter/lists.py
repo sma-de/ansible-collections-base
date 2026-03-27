@@ -30,7 +30,7 @@ class DateSortFilter(FilterBase):
 
     @property
     def argspec(self):
-        tmp = super(GetSubdictFilter, self).argspec
+        tmp = super(DateSortFilter, self).argspec
 
         tmp.update({
           'attribute': (list(string_types) + [type(None)], None),
