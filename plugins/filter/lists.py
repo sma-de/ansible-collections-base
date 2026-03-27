@@ -70,7 +70,7 @@ class DateSortFilter(FilterBase):
 
 
 # ---- Ansible filters ----
-class DateSortFilter(object):
+class FilterModule(object):
     ''' generic list filters '''
 
     def filters(self):
