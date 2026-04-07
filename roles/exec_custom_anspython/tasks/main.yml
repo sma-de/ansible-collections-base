@@ -52,7 +52,7 @@
         vars:
           ansible_python_interpreter: "{{ smabot_base_exec_custom_anspython_cfg.pybin }}"
 
-    when: smabot_base_exec_custom_anspython_cfg.get('role', False)
+    when: smabot_base_exec_custom_anspython_cfg.get('role', False) is truthy
 
 
   - block:
@@ -64,7 +64,7 @@
         vars:
           ansible_python_interpreter: "{{ smabot_base_exec_custom_anspython_cfg.pybin }}"
 
-    when: smabot_base_exec_custom_anspython_cfg.get('tasks', False)
+    when: smabot_base_exec_custom_anspython_cfg.get('tasks', False) is truthy
 
 
   - ansible.builtin.assert:
