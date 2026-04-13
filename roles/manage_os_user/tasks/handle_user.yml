@@ -5,39 +5,25 @@
       _tmp_mod_user_args: "{{ _iter_users.value.configs.user }}"
 
 
+    ## standard pw handling: one unique pw per host
+  - include_tasks: secrets_handling/password/main.yml
+    when: >-
+      _iter_users.value.password.enabled is truthy
+      and not _iter_users.value.password.batched
+
+
   - block:
 
-        ##
-        ## note: there are multiple supported ways for getting the user pw
-        ##   here (external source, random gen, hardcoded by cfg, ...), at the
-        ##   end of the day one method should trigger and write it to special
-        ##   internal var "_tmp_user_pw"
-        ##
-      - set_fact:
-          _tmp_user_pw:
+        ## batched pw handling: same single pw for all host
+      - include_tasks: secrets_handling/password/main.yml
 
-          ## optional password related usermodule cfg overrrides
-          _tmp_user_pw_cfg: {}
-
-
-      - include_tasks: get_password.yml
-
-
-      - set_fact:
-          _tmp_mod_user_args: >-
-            {{ _tmp_mod_user_args | combine(_tmp_user_pw_cfg)
-             | combine({'password': _tmp_user_pw}) }}
-        no_log: true
-
-    ##
-    ## note: currently we just one password for all target systems
-    ## TODO: in theory nothing wrong with having individual passwords for each target, support this use case????
-    ##
     run_once: true
     delegate_to: >-
       {{ _iter_users.value.secret_handler
        | default((ansible_play_batch | first), True) }}
-    when: _iter_users.value.password.enabled is truthy
+    when: >-
+      _iter_users.value.password.enabled is truthy
+      and _iter_users.value.password.batched
 
 
   - name: add / modify / remove os user  ==>>  {{ _iter_users.value.name }}
@@ -46,20 +32,32 @@
 
 
     ## optionally handle ssh access for this user
-  - include_tasks: handle_ssh.yml
+  - include_tasks: secrets_handling/ssh/main.yml
     when: _iter_users.value.ssh.enabled
 
 
   - block:
+
+        ## note: one big write is performance wise much better
+        ##   than many smaller writes
+      - name: combine host specific secrets to single global map
+        set_fact:
+          _tmp_final_save_sinks: >-
+            {{ ansible_play_batch
+               | map('extract', hostvars, '_tmp_final_save_sinks')
+               | ansible.builtin.combine(recursive=True)
+            }}
+        no_log: >-
+          {{ smabot_base_manage_os_user_args_normed.hide_secrets }}
 
       - name: optionally save new secrets to secret sink(s)
         include_tasks: handle_secret_sinks/main_write.yml
         loop: "{{ _tmp_final_save_sinks | dict2items }}"
         loop_control:
           loop_var: _iter_save_sinks
+          label: "{{ _iter_save_sinks.key }}"
 
     run_once: true
-    ##delegate_to: localhost
     delegate_to: >-
       {{ _iter_users.value.secret_handler
        | default((ansible_play_batch | first), True) }}

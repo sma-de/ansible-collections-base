@@ -97,17 +97,23 @@
 
   - smabot.base.normalize_manage_os_user_args:
     register: _tmp_normed_cfg
-    no_log: true  ## might contain secrets (passwords / ssh private keys
+    ## might contain secrets (passwords / ssh private keys
+    no_log: >-
+      {{ smabot_base_manage_os_user_args.hide_secrets | default(True, True) }}
 
   - set_fact:
       smabot_base_manage_os_user_args_normed: "{{ _tmp_normed_cfg.normalized }}"
-    no_log: true  ## might contain secrets (passwords / ssh private keys
+    ## might contain secrets (passwords / ssh private keys
+    no_log: >-
+      {{ _tmp_normed_cfg.normalized.hide_secrets }}
 
 
   - include_tasks: handle_user.yml
-    loop: "{{ smabot_base_manage_os_user_args_normed.users.users | dict2items() }}"
+    loop: >-
+      {{ smabot_base_manage_os_user_args_normed.users.users | dict2items }}
     loop_control:
       loop_var: _iter_users
+      label: "{{ _iter_users.key }}"
 
 
   - block:

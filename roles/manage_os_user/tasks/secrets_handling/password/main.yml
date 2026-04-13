@@ -1,0 +1,24 @@
+---
+
+    ##
+    ## note: there are multiple supported ways for getting the user pw
+    ##   here (external source, random gen, hardcoded by cfg, ...), at the
+    ##   end of the day one method should trigger and write it to special
+    ##   internal var "_tmp_user_pw"
+    ##
+  - set_fact:
+      _tmp_user_pw:
+
+      ## optional password related usermodule cfg overrrides
+      _tmp_user_pw_cfg: {}
+
+
+  - include_tasks: get_password.yml
+
+
+  - set_fact:
+      _tmp_mod_user_args: >-
+        {{ _tmp_mod_user_args | combine(_tmp_user_pw_cfg)
+         | combine({'password': _tmp_user_pw}) }}
+    no_log: true
+

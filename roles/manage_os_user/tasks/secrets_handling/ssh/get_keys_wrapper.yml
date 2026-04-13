@@ -1,0 +1,13 @@
+---
+
+  - set_fact:
+      ## list of subcfg maps for authkey module, one per key
+      _tmp_user_sshkeys_pub: []
+
+
+  - include_tasks: get_sshkeys.yml
+    loop: "{{ _iter_users.value.ssh.keygen | dict2items }}"
+    loop_control:
+      loop_var: _iter_sshkeys
+      label: "{{ _iter_sshkeys.key }}"
+

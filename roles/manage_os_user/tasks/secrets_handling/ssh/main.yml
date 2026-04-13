@@ -1,25 +1,22 @@
 ---
 
+    ## standard mode: different unique keys per host
+  - include_tasks: get_keys_wrapper.yml
+    when: >-
+      not _iter_users.value.ssh.batched
+
+
   - block:
 
-      - set_fact:
-          ## list of subcfg maps for authkey module, one per key
-          _tmp_user_sshkeys_pub: []
+        ## batched mode: same global keys for all hosts
+      - include_tasks: get_keys_wrapper.yml
 
-
-      - include_tasks: get_sshkeys.yml
-        loop: "{{ _iter_users.value.ssh.keygen | dict2items }}"
-        loop_control:
-          loop_var: _iter_sshkeys
-
-    ##
-    ## note: currently we just one password for all target systems
-    ## TODO: in theory nothing wrong with having individual passwords for each target, support this use case????
-    ##
     run_once: true
     delegate_to: >-
       {{ _iter_users.value.secret_handler
        | default((ansible_play_batch | first), True) }}
+    when: >-
+      _iter_users.value.ssh.batched
 
 
   - include_tasks: auth_sshkeys.yml

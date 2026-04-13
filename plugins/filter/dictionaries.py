@@ -13,9 +13,17 @@ from ansible.errors import AnsibleFilterError, AnsibleOptionsError
 from ansible.module_utils.six import iteritems, string_types
 from ansible.module_utils.common._collections_compat import MutableMapping
 from ansible.module_utils._text import to_native
+from ansible.utils.display import Display
 
 from ansible_collections.smabot.base.plugins.module_utils.plugins.plugin_base import MAGIC_ARGSPECKEY_META
 from ansible_collections.smabot.base.plugins.module_utils.plugins.filter_base import FilterBase
+
+from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import \
+  merge_dicts,\
+  setdefault_none
+
+
+display = Display()
 
 
 DICTKEY_UNSET = '----||!!unset!!||----'
@@ -298,6 +306,107 @@ class DeepCopyFilter(FilterBase):
         return copy.deepcopy(inval)
 
 
+##
+## config specific filter for manage_os_users secrets writing
+##
+class ManageUsersCfgSecretRW_NewSecretFilter(FilterBase):
+
+    FILTER_ID = 'manage_users_cfg_secret_rw_new_secret'
+
+    @property
+    def argspec(self):
+        tmp = super(ManageUsersCfgSecretRW_NewSecretFilter, self).argspec
+
+        tmp.update({
+          'new_data': ([MutableMapping], {}),
+          'template_vars': ([MutableMapping], {}),
+          'write': ([bool], False),
+          'method': (list(string_types),),
+        })
+
+        return tmp
+
+
+    def _method_hvault(self, inval, dkey_templ, dkey_orig):
+        write_mode = self.get_taskparam('write')
+        ndata = self.get_taskparam('new_data')
+
+        if write_mode:
+            if not ndata:
+                raise AnsibleOptionsError(
+                   "write_mode is active, in that case new_data"\
+                   " parameter must be filled with data to write"
+                )
+
+            # go to correct sub level
+            smap = inval
+
+            for k in ['_subcfg_write', 'set_secrets', 'secrets']:
+                smap = smap[k]
+
+            # merge properly together:
+            #  -> any preset data on templated key
+            #  -> any preset data on untemplated original key
+            #  -> new data
+            tmp = setdefault_none(smap, dkey_templ, {})
+
+            if dkey_templ != dkey_orig:
+                tmp = merge_dicts(tmp, smap.pop(dkey_orig, {}))
+
+            merge_dicts(tmp, {'data': ndata})
+            return inval
+
+        ## read mode
+        if ndata:
+            raise AnsibleOptionsError(
+               "read_mode is active, in that case new_data"\
+               " parameter is ignored, you should not set anything there"
+            )
+
+        # go to correct sub level
+        smap = inval
+
+        for k in ['_subcfg_read', 'get_secrets', 'secrets']:
+            smap = smap[k]
+
+        # in read case we always currently always expected templated key
+        # without content and untemplated key with content I think
+        smap[dkey_templ] = smap.pop(dkey_orig)
+        return inval
+
+
+    ## expects secret data to write as inval
+    def run_specific(self, inval):
+        if not isinstance(inval, MutableMapping):
+            raise AnsibleOptionsError(
+               "filter input must be a dictionary, but given value"\
+               " '{}' has type '{}'".format(inval, type(inval))
+            )
+
+        meth  = self.get_taskparam('method')
+
+        if not meth:
+            raise AnsibleOptionsError(
+              "mandatory parameter 'method' cannot be empty"
+            )
+
+        meth_fn = getattr(self, '_method_' + meth, None)
+
+        if not meth_fn:
+            raise AnsibleOptionsError(
+              "given method '{}' is not supported".format(meth)
+            )
+
+        tvars = self.get_taskparam('template_vars')
+        dkey_orig = inval['_subcfg_sid']
+
+        ## optionally try to template data key with all given template vars
+        dkey = dkey_orig.format(**tvars)
+        inval['_subcfg_sid_templated'] = dkey
+
+        return meth_fn(inval, dkey, dkey_orig)
+
+
 
 # ---- Ansible filters ----
 class FilterModule(object):
@@ -312,6 +421,7 @@ class FilterModule(object):
           KvListFilter,
           MapSelectFilter,
           SubdictFilter,
+          ManageUsersCfgSecretRW_NewSecretFilter,
         ]
 
         for f in tmp:

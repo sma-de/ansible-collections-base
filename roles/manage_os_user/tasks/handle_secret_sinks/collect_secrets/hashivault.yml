@@ -15,7 +15,9 @@
            }
         }}
     when: _tmp_secret_type == 'ssh'
-    no_log: true
+    no_log: >-
+      {{ smabot_base_manage_os_user_args_normed.hide_secrets }}
+
 
   - set_fact:
       _tmp_new_data: >-
@@ -26,7 +28,8 @@
            }
         }}
     when: _tmp_secret_type == 'pw'
-    no_log: true
+    no_log: >-
+      {{ smabot_base_manage_os_user_args_normed.hide_secrets }}
 
 
     ##
@@ -36,19 +39,21 @@
     ##
   - set_fact:
       _tmp_final_save_sinks: >-
-        {{ _tmp_final_save_sinks | combine({
+        {{ _tmp_final_save_sinks | ansible.builtin.combine({
              _iter_save_sinks.key: {
-                'downcfg': (
-                   _iter_save_sinks.value._subcfg_write | combine({'set_secrets': {
-                      'secrets': {_iter_save_sinks.value._subcfg_sid: {
-                         'data': _tmp_new_data,
-                      }}
-                   }}, recursive=True)
-                ),
+                'downcfg': (_iter_save_sinks.value |
+                   smabot.base.manage_users_cfg_secret_rw_new_secret(
+                      new_data=_tmp_new_data, write=True,
+                      method='hvault', template_vars={
+                        'hostname_inventory': inventory_hostname,
+                      }
+                   )
+                )._subcfg_write,
 
                 'sinkcfg': _iter_save_sinks.value,
              },
            }, recursive=True)
         }}
-    no_log: true
+    no_log: >-
+      {{ smabot_base_manage_os_user_args_normed.hide_secrets }}
 

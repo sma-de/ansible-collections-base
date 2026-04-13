@@ -10,6 +10,7 @@ import pathlib
 
 from ansible.errors import AnsibleOptionsError
 ##from ansible.plugins.filter.core import to_bool
+from ansible.utils.display import Display
 
 from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normalizing.base import \
   ConfigNormalizerBaseMerger, \
@@ -18,13 +19,17 @@ from ansible_collections.smabot.base.plugins.module_utils.plugins.config_normali
   NormalizerNamed
 
 from ansible_collections.smabot.base.plugins.module_utils.utils.dicting import \
-  get_subdict, \
-  merge_dicts, \
-  setdefault_none, \
-  SUBDICT_METAKEY_ANY
+  get_subdict,\
+  merge_dicts,\
+  setdefault_none,\
+  SUBDICT_METAKEY_ANY,\
+  SafeDict
+
 
 from ansible_collections.smabot.base.plugins.module_utils.utils.utils import ansible_assert
 
+
+display = Display()
 
 
 class RootCfgNormalizer(NormalizerBase):
@@ -34,6 +39,10 @@ class RootCfgNormalizer(NormalizerBase):
         subnorms += [
           UsersNormer(pluginref),
         ]
+
+        self._add_defaultsetter(kwargs,
+          'hide_secrets', DefaultSetterConstant(True)
+        )
 
         super(RootCfgNormalizer, self).__init__(pluginref, *args, **kwargs)
 
@@ -161,8 +170,8 @@ class UserInstNormer(NormalizerNamed):
 class UserSudoNormer(ActiveUserOnlyNormer):
 
     DEFAULT_SUDOERS_FILEPATH = '60_ansible_users'
-
     NORMER_CONFIG_PATH = ['sudo']
+
 
     def __init__(self, pluginref, *args, **kwargs):
         self._add_defaultsetter(kwargs,
@@ -250,6 +259,12 @@ class SSHNormer(ActiveUserOnlyNormer):
 
         self._add_defaultsetter(kwargs,
           'keys_exclusive', DefaultSetterConstant(True)
+        )
+
+        ## for a "batched" ssh keys one and the same key is used for all
+        ## machines, on default each machine gets its own unique secret
+        self._add_defaultsetter(kwargs,
+          'batched', DefaultSetterConstant(False)
         )
 
         super(SSHNormer, self).__init__(pluginref, *args, **kwargs)
@@ -403,11 +418,15 @@ class PasswordNormer(ActiveUserOnlyNormer):
           'empty', DefaultSetterConstant(False)
         )
 
-        ##
         ## "locked=True" means access per password is locked (not allowed)
-        ##
         self._add_defaultsetter(kwargs,
           'locked', DefaultSetterConstant(False)
+        )
+
+        ## for a "batched" passwort one and the same pw is used for all
+        ## machines, on default each machine gets its own unique secret
+        self._add_defaultsetter(kwargs,
+          'batched', DefaultSetterConstant(False)
         )
 
         super(PasswordNormer, self).__init__(pluginref, *args, **kwargs)
@@ -640,16 +659,16 @@ class SaveToSinksInstBaseNormer(NormalizerNamed):
         mpoint = c['mountpoint']
         spath = c['path']
 
-        path_formatters = {
-          'user_name': un,
-        }
+        path_formatters = SafeDict(
+          user_name=un,
+        )
 
         self.customize_path_formatters_hashivault(
            path_formatters, cfg, my_subcfg, cfgpath_abs
         )
 
-        mpoint = mpoint.format(**path_formatters)
-        spath = spath.format(**path_formatters)
+        mpoint = mpoint.format_map(path_formatters)
+        spath = spath.format_map(path_formatters)
 
         savedat = c.get('data', {})
 

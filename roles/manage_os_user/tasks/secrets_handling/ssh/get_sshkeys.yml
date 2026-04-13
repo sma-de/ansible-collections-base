@@ -14,16 +14,33 @@
          {{ _iter_sshkeys.value.ssh_keys.private }}
     when: >-
       _iter_sshkeys.value.ssh_keys.public is truthy
-    no_log: true
+    no_log: >-
+      {{ smabot_base_manage_os_user_args_normed.hide_secrets }}
 
 
   - block:
 
+       ## standard variant
      - name: try reading current sshkey from source/sink
-       include_tasks: handle_secret_sinks/main_read.yml
+       include_tasks: ../../handle_secret_sinks/main_read.yml
        when: >-
           _iter_sshkeys.value.autogen.cycle is falsy
           and _iter_sshkeys.value.save_to_sinks._read_cfg is truthy
+          and (_iter_users.value.secret_handler | default(False)) is falsy
+
+       ## delegated variant
+     - block:
+
+         - name: try reading current sshkey from source/sink
+           include_tasks: ../../handle_secret_sinks/main_read.yml
+           when: >-
+              _iter_sshkeys.value.autogen.cycle is falsy
+              and _iter_sshkeys.value.save_to_sinks._read_cfg is truthy
+              and _iter_users.value.secret_handler is defined
+              and _iter_users.value.secret_handler is truthy
+
+       delegate_to: >-
+         {{ _iter_users.value.secret_handler }}
 
 
      - block:
@@ -55,7 +72,8 @@
            ansible.builtin.slurp:
              src: "{{ _tmp_modres_gen_sshkey.filename }}"
            register: _tmp_modres_read_privkey
-           no_log: true
+           no_log: >-
+             {{ smabot_base_manage_os_user_args_normed.hide_secrets }}
 
 
          - name: read generated public key from remote
@@ -69,7 +87,8 @@
                 {{ _tmp_modres_read_privkey.content | b64decode }}
              _tmp_user_new_sshkey_pub: >-
                 {{ _tmp_modres_read_pubkey.content  | b64decode }}
-           no_log: true
+           no_log: >-
+             {{ smabot_base_manage_os_user_args_normed.hide_secrets }}
 
 
          - name: remove ssh keygen tmp dir again
@@ -85,7 +104,7 @@
 
 
   - name: collect new secrets for later saving
-    include_tasks: handle_secret_sinks/main_collect_secrets.yml
+    include_tasks: ../../handle_secret_sinks/main_collect_secrets.yml
     loop: "{{ _iter_sshkeys.value.save_to_sinks.sinks | dict2items }}"
     loop_control:
       loop_var: _iter_save_sinks
