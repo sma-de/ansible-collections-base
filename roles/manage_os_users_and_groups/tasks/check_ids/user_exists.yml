@@ -2,7 +2,7 @@
 
   - set_fact:
       _ids_match: >-
-        {{ _tmp_old_numid == _id_check_args.new_id }}
+        {{ (_tmp_old_numid | int) == (_id_check_args.new_id | int) }}
 
 
   - name: >-

@@ -16,5 +16,5 @@
   - include_tasks: handle_id.yml
     when: >-
       _id_check_args.state == 'present'
-      and _id_check_args.new_id != "-1"
+      and (_id_check_args.new_id | int) != -1
 
