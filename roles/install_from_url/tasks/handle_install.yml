@@ -64,7 +64,8 @@
         # optionally flatten final unpacked dir hierarchy
       - smabot.base.flatten_filetree: >-
           {{ smabot_base_setup_install_from_url_args_normed.destination.unpacking.flatten.config }}
-        when: smabot_base_setup_install_from_url_args_normed.destination.unpacking.flatten.enabled
+        when: >-
+          smabot_base_setup_install_from_url_args_normed.destination.unpacking.flatten.enabled is truthy
 
 
       - name: optionally checksum an archive contained reference file
@@ -78,7 +79,8 @@
             'checksum', False
           ) is truthy
 
-    when: smabot_base_setup_install_from_url_args_normed.destination.unpacking.enabled
+    when: >-
+      smabot_base_setup_install_from_url_args_normed.destination.unpacking.enabled is truthy
 
 
   - block:
@@ -94,7 +96,8 @@
         ansible.builtin.file: >-
           {{ smabot_base_setup_install_from_url_args_normed.destination.config }}
 
-    when: not smabot_base_setup_install_from_url_args_normed.destination.unpacking.enabled
+    when: >-
+      smabot_base_setup_install_from_url_args_normed.destination.unpacking.enabled is falsy
 
 
   - name: delete tmp download dir
