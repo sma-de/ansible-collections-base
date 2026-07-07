@@ -9,7 +9,7 @@
   - set_fact:
       _tmp_dlargs: >-
          {{ smabot_base_setup_install_from_url_args_normed.download.config
-          | combine({'dest': (_tmp_dldir.path, 'archive') | path_join }) }}
+          | ansible.builtin.combine({'dest': (_tmp_dldir.path, 'archive') | path_join }) }}
 
   - name: download software to install from  ==>>  {{ _tmp_dlargs.url }}
     ansible.builtin.get_url: "{{ _tmp_dlargs }}"
@@ -20,18 +20,21 @@
       - set_fact:
           _tmp_modargs: >-
              {{ smabot_base_setup_install_from_url_args_normed.download.verify
-              | combine({'file': _tmp_dlargs.dest}) }}
+              | ansible.builtin.combine({'file': _tmp_dlargs.dest}) }}
 
       - name: optionally check gpg keys
         smabot.base.gpg_verify: "{{ _tmp_modargs }}"
 
-    when: smabot_base_setup_install_from_url_args_normed.download.get('verify', False)
+    when: >-
+      smabot_base_setup_install_from_url_args_normed.download.get(
+        'verify', False
+      ) is truthy
 
 
   - set_fact:
       _tmp_modargs: >-
          {{ smabot_base_setup_install_from_url_args_normed.destination.config
-          | combine({
+          | ansible.builtin.combine({
               'path': smabot_base_setup_install_from_url_args_normed.destination.path | dirname,
               'state': 'directory'
           }) }}
@@ -50,7 +53,7 @@
       - set_fact:
           _tmp_modargs: >-
              {{ smabot_base_setup_install_from_url_args_normed.destination.unpacking.config
-              | combine({'src': _tmp_dlargs.dest}) }}
+              | ansible.builtin.combine({'src': _tmp_dlargs.dest}) }}
 
       - name: >-
           unpack downloaded archive to final install
@@ -70,7 +73,10 @@
         vars:
           smabot_base_do_checksum_args: >-
             {{ smabot_base_setup_install_from_url_args_normed.destination.unpacking.get('checksum', {}) }}
-        when: smabot_base_setup_install_from_url_args_normed.destination.unpacking.get('checksum', False)
+        when: >-
+          smabot_base_setup_install_from_url_args_normed.destination.unpacking.get(
+            'checksum', False
+          ) is truthy
 
     when: smabot_base_setup_install_from_url_args_normed.destination.unpacking.enabled
 
