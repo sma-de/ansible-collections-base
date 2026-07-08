@@ -35,7 +35,7 @@
             - "{}"
             - ";"
         register: _tmp_modres
-        changed_when: _tmp_modres.stdout_lines
+        changed_when: _tmp_modres.stdout_lines is truthy
 
 
       - debug:
