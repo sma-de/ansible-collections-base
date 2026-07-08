@@ -42,7 +42,7 @@
           msg: |-
             The following owner changers were performed:
               {{ _tmp_modres.stdout }}
-        when: _tmp_modres.stdout_lines
+        when: _tmp_modres.stdout_lines is truthy
 
     when: _tmp_old_numid != "-1"
 
